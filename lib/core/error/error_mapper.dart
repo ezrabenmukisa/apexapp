@@ -2,11 +2,23 @@ import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../logging/app_logger.dart';
 import 'exceptions.dart';
 import 'failures.dart';
 
-/// Converts anything thrown in the data layer into a [Failure].
-Failure mapErrorToFailure(Object error) => switch (error) {
+/// Converts anything thrown in the data layer into a [Failure], logging the
+/// original error and [stackTrace] in debug builds.
+Failure mapErrorToFailure(Object error, [StackTrace? stackTrace]) {
+  final failure = _toFailure(error);
+  appLogger.w(
+    '${failure.runtimeType}: ${failure.message}',
+    error: error,
+    stackTrace: stackTrace,
+  );
+  return failure;
+}
+
+Failure _toFailure(Object error) => switch (error) {
   Failure() => error,
   DioException() => _fromDio(error),
   FirebaseAuthException() => mapFirebaseAuthError(error),

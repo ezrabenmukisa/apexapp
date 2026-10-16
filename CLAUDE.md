@@ -31,6 +31,10 @@ Rules:
 - A single `Dio` is registered in `core/di/register_module.dart`. `AuthInterceptor` adds `Authorization: Bearer <Firebase ID token>` and retries once on 401 with a refreshed token.
 - Paths live in `core/network/api_endpoints.dart`. JSON keys are snake_case exactly as in the PDF.
 
+## Logging
+
+Use `appLogger` (`core/logging/app_logger.dart`); never `print`. It is silent outside debug builds. In debug, `AppBlocObserver`, `LoggingInterceptor` (Dio, token never printed), `mapErrorToFailure` and the global error hooks in `main.dart` log automatically.
+
 ## Mock vs real backend
 
 Every backend data source has an interface plus two implementations:
@@ -65,7 +69,7 @@ Use the tokens in `core/theme/`. Never hard-code colours or fonts in features.
 
 ## Firebase
 
-Project `apex-9fcb6`; app id `com.apex.app` on Android and iOS. Regenerate config with `flutterfire configure --project=apex-9fcb6 --platforms=android,ios --android-package-name=com.apex.app --ios-bundle-id=com.apex.app`.
+Project `apex-9fcb6`; app id `com.apex.app` on Android and iOS. Full console setup, iOS steps and troubleshooting: `docs/firebase-setup.md`. Android builds are signed with shared team keys from `android/key.properties` + `android/keystore/` (gitignored; the repo is public, never commit them). Regenerate config with `flutterfire configure --project=apex-9fcb6 --platforms=android,ios --android-package-name=com.apex.app --ios-bundle-id=com.apex.app`.
 
 ## Checks
 

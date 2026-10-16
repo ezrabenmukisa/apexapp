@@ -47,7 +47,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart' as _i558;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:google_sign_in/google_sign_in.dart' as _i116;
 import 'package:injectable/injectable.dart' as _i526;
-import 'package:logger/logger.dart' as _i974;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
 
 const String _mock = 'mock';
@@ -70,7 +69,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i558.FlutterSecureStorage>(
       () => registerModule.secureStorage,
     );
-    gh.lazySingleton<_i974.Logger>(() => registerModule.logger);
     gh.lazySingleton<_i818.SessionLocalDataSource>(
       () => _i818.SessionLocalDataSource(gh<_i558.FlutterSecureStorage>()),
     );
@@ -85,12 +83,12 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i491.AuthApiDataSourceMock(gh<_i199.MockUserStore>()),
       registerFor: {_mock},
     );
+    gh.lazySingleton<_i361.Dio>(
+      () => registerModule.dio(gh<_i59.FirebaseAuth>()),
+    );
     gh.lazySingleton<_i607.ProfileApiDataSource>(
       () => _i607.ProfileApiDataSourceMock(gh<_i199.MockUserStore>()),
       registerFor: {_mock},
-    );
-    gh.lazySingleton<_i361.Dio>(
-      () => registerModule.dio(gh<_i59.FirebaseAuth>(), gh<_i974.Logger>()),
     );
     gh.lazySingleton<_i510.FirebaseAuthDataSource>(
       () => _i510.FirebaseAuthDataSource(

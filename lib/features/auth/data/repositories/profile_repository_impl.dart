@@ -31,8 +31,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
           : fetched;
       await _local.cacheUser(user, uid: uid);
       return Right(user);
-    } catch (e) {
-      final failure = mapErrorToFailure(e);
+    } catch (e, st) {
+      final failure = mapErrorToFailure(e, st);
       if (failure is NetworkFailure) {
         final cached = await _local.cachedUser(uid: uid);
         if (cached != null) return Right(cached);
@@ -52,8 +52,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
           : updated;
       await _local.cacheUser(user, uid: uid);
       return Right(user);
-    } catch (e) {
-      return Left(mapErrorToFailure(e));
+    } catch (e, st) {
+      return Left(mapErrorToFailure(e, st));
     }
   }
 }

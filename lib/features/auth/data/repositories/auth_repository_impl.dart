@@ -92,8 +92,8 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, T>> _guard<T>(Future<T> Function() run) async {
     try {
       return Right(await run());
-    } catch (e) {
-      return Left(mapErrorToFailure(e));
+    } catch (e, st) {
+      return Left(mapErrorToFailure(e, st));
     }
   }
 
