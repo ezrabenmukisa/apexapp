@@ -19,6 +19,8 @@ class MockUserStore {
   final FirebaseAuth _auth;
   final SharedPreferences _prefs;
 
+  String currentUid() => _uid();
+
   String _uid() {
     final uid = _auth.currentUser?.uid;
     if (uid == null) {

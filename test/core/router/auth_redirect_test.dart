@@ -20,7 +20,10 @@ void main() {
 
     test('signed-out users may only see the sign-in flow', () {
       expect(authRedirect(signedOut, AppRoutes.splash), AppRoutes.welcome);
-      expect(authRedirect(signedOut, AppRoutes.owner), AppRoutes.welcome);
+      expect(
+        authRedirect(signedOut, AppRoutes.ownerProjects),
+        AppRoutes.welcome,
+      );
       expect(authRedirect(signedOut, AppRoutes.signIn), isNull);
       expect(authRedirect(signedOut, AppRoutes.signInPhone), isNull);
       expect(authRedirect(signedOut, AppRoutes.signInEmail), isNull);
@@ -30,8 +33,8 @@ void main() {
       for (final location in [
         AppRoutes.splash,
         AppRoutes.signIn,
-        AppRoutes.owner,
-        AppRoutes.site,
+        AppRoutes.ownerProjects,
+        AppRoutes.siteToday,
       ]) {
         expect(authRedirect(needsProfile, location), AppRoutes.completeProfile);
       }
@@ -39,14 +42,20 @@ void main() {
     });
 
     test('authenticated users land on the home for their role', () {
-      expect(authRedirect(owner, AppRoutes.completeProfile), AppRoutes.owner);
-      expect(authRedirect(manager, AppRoutes.signIn), AppRoutes.site);
-      expect(authRedirect(owner, AppRoutes.owner), isNull);
+      expect(
+        authRedirect(owner, AppRoutes.completeProfile),
+        AppRoutes.ownerProjects,
+      );
+      expect(authRedirect(manager, AppRoutes.signIn), AppRoutes.siteToday);
+      expect(authRedirect(owner, AppRoutes.ownerProjects), isNull);
     });
 
     test('users cannot open the other role\'s shell', () {
-      expect(authRedirect(owner, AppRoutes.site), AppRoutes.owner);
-      expect(authRedirect(manager, AppRoutes.owner), AppRoutes.site);
+      expect(authRedirect(owner, AppRoutes.siteToday), AppRoutes.ownerProjects);
+      expect(
+        authRedirect(manager, AppRoutes.ownerProjects),
+        AppRoutes.siteToday,
+      );
     });
   });
 }
