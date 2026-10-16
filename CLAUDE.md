@@ -26,6 +26,10 @@ Rules:
 - Blocs/cubits never navigate. `AuthBloc` state drives `go_router` redirects (`core/router/auth_redirect.dart`).
 - DI is `get_it` + `injectable`. Run `dart run build_runner build` after adding or changing annotations.
 
+## Material: `material_ui`, not `flutter/material`
+
+Import `package:material_ui/material_ui.dart` (and `cupertino_ui`), never `package:flutter/material.dart`. Since Flutter 3.47, Material lives in that standalone package, and pinput, go_router and others are built on it. Mixing in the old import gives two different `Material`/`MaterialApp` classes, which causes "No Material widget found" crashes and missing page transitions.
+
 ## Networking: Dio only (no `http` package)
 
 - A single `Dio` is registered in `core/di/register_module.dart`. `AuthInterceptor` adds `Authorization: Bearer <Firebase ID token>` and retries once on 401 with a refreshed token.
