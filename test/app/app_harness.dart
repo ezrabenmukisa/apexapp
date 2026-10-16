@@ -5,7 +5,7 @@ import 'package:app/app.dart';
 import 'package:app/core/device/connectivity_service.dart';
 import 'package:app/core/di/injection.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
