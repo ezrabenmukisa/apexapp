@@ -31,6 +31,10 @@ Rules:
 - Cubits shared across tabs and full-screen pages (dashboard, inbox, site assignment, outbox, evidence draft, settings) live in `SessionScope` (`core/navigation/session_scope.dart`), rebuilt per signed-in user.
 - Device capabilities (GPS, camera, receipts picker, geocoding, permissions, FCM token) are interfaces in `core/device/device_services.dart`. The current implementations are **simulations**; swap in real plugins there.
 
+## Material: `material_ui`, not `flutter/material`
+
+Import `package:material_ui/material_ui.dart` (and `cupertino_ui`), never `package:flutter/material.dart`. Since Flutter 3.47, Material lives in that standalone package, and pinput, go_router and others are built on it. Mixing in the old import gives two different `Material`/`MaterialApp` classes, which causes "No Material widget found" crashes and missing page transitions.
+
 ## Networking: Dio only (no `http` package)
 
 - A single `Dio` is registered in `core/di/register_module.dart`. `AuthInterceptor` adds `Authorization: Bearer <Firebase ID token>` and retries once on 401 with a refreshed token.
