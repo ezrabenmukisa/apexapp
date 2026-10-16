@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Siteproof "field ledger" palette (docs: 01 Foundations).
 ///
