@@ -62,6 +62,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '914541790823',
     projectId: 'apex-9fcb6',
     storageBucket: 'apex-9fcb6.firebasestorage.app',
+    androidClientId: '914541790823-ic391usc3s2ub8eapmrf5359c0if92e2.apps.googleusercontent.com',
+    iosClientId: '914541790823-juafrrab3egfq4dc40drptffmem3r7lh.apps.googleusercontent.com',
     iosBundleId: 'com.apex.app',
   );
 }
