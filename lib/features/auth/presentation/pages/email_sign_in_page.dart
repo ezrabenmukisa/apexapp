@@ -14,7 +14,7 @@ import '../utils/onboarding_steps.dart';
 import '../utils/validators.dart';
 import '../widgets/legal_footnote.dart';
 
-/// "Use email instead": email + password as an alternative to SMS.
+/// "Continue with email": email + password sign-in or account creation.
 class EmailSignInPage extends StatelessWidget {
   const EmailSignInPage({super.key});
 

@@ -19,7 +19,7 @@ import '../utils/onboarding_steps.dart';
 import '../widgets/country_picker_sheet.dart';
 import '../widgets/legal_footnote.dart';
 
-/// Onboarding 12, step 1: one sign-in for new and returning users.
+/// Onboarding 12, step 1: "Continue with phone".
 class PhoneSignInPage extends StatelessWidget {
   const PhoneSignInPage({super.key});
 

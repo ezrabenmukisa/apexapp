@@ -1,7 +1,10 @@
 abstract final class AppRoutes {
   static const splash = '/';
   static const welcome = '/welcome';
+
+  /// Continue with Google / phone / email.
   static const signIn = '/sign-in';
+  static const signInPhone = '/sign-in/phone';
   static const signInEmail = '/sign-in/email';
   static const completeProfile = '/onboarding/profile';
   static const sessionError = '/session-error';
@@ -13,5 +16,5 @@ abstract final class AppRoutes {
   static const site = '/site';
 
   /// Routes reachable while signed out.
-  static const signedOut = {welcome, signIn, signInEmail};
+  static const signedOut = {welcome, signIn, signInPhone, signInEmail};
 }

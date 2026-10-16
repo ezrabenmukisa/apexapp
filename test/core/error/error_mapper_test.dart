@@ -4,6 +4,7 @@ import 'package:app/core/error/failures.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 void main() {
   final request = RequestOptions(path: '/users/me');
@@ -70,6 +71,14 @@ void main() {
       );
       expect(failure, isA<AuthFailure>());
       expect(failure.message, contains('incorrect'));
+    });
+
+    test('dismissing the Google picker is a cancelled AuthFailure', () {
+      final failure = mapErrorToFailure(
+        const GoogleSignInException(code: GoogleSignInExceptionCode.canceled),
+      );
+      expect(failure, isA<AuthFailure>());
+      expect((failure as AuthFailure).code, authCancelledCode);
     });
   });
 }

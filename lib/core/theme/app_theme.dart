@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 import 'app_dimensions.dart';
@@ -37,7 +36,7 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.paper,
-      fontFamily: GoogleFonts.hankenGrotesk().fontFamily,
+      fontFamily: AppTextStyles.ui,
       dividerTheme: const DividerThemeData(
         color: AppColors.rule,
         thickness: 1,

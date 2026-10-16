@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
@@ -9,16 +8,22 @@ import 'app_colors.dart';
 /// - Hanken Grotesk: interface — labels, body, buttons.
 /// - IBM Plex Mono: proof data — coordinates, timestamps, receipt numbers.
 abstract final class AppTextStyles {
-  static TextStyle _display(double size, double height) =>
-      GoogleFonts.newsreader(
-        fontSize: size,
-        height: height / size,
-        fontWeight: FontWeight.w500,
-        color: AppColors.ink,
-      );
+  // Family names declared in pubspec.yaml (fonts bundled under assets/fonts).
+  static const display = 'Newsreader';
+  static const ui = 'HankenGrotesk';
+  static const proofMono = 'IBMPlexMono';
+
+  static TextStyle _display(double size, double height) => TextStyle(
+    fontFamily: display,
+    fontSize: size,
+    height: height / size,
+    fontWeight: FontWeight.w500,
+    color: AppColors.ink,
+  );
 
   static TextStyle _ui(double size, double height, FontWeight weight) =>
-      GoogleFonts.hankenGrotesk(
+      TextStyle(
+        fontFamily: ui,
         fontSize: size,
         height: height / size,
         fontWeight: weight,
@@ -30,7 +35,8 @@ abstract final class AppTextStyles {
     FontWeight weight = FontWeight.w500,
     Color color = AppColors.ink,
     double letterSpacing = 0.06,
-  }) => GoogleFonts.ibmPlexMono(
+  }) => TextStyle(
+    fontFamily: proofMono,
     fontSize: size,
     fontWeight: weight,
     color: color,

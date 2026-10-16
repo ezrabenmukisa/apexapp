@@ -45,6 +45,10 @@ class AuthRepositoryImpl implements AuthRepository {
   );
 
   @override
+  Future<Either<Failure, Unit>> signInWithGoogle() =>
+      _guardUnit(_firebase.signInWithGoogle);
+
+  @override
   Future<Either<Failure, Unit>> signInWithEmail({
     required String email,
     required String password,

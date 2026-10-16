@@ -8,6 +8,7 @@ import '../../features/auth/presentation/pages/complete_profile_page.dart';
 import '../../features/auth/presentation/pages/email_sign_in_page.dart';
 import '../../features/auth/presentation/pages/phone_sign_in_page.dart';
 import '../../features/auth/presentation/pages/session_error_page.dart';
+import '../../features/auth/presentation/pages/sign_in_options_page.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/pages/welcome_page.dart';
 import '../../features/home/presentation/pages/home_placeholder_page.dart';
@@ -24,8 +25,9 @@ GoRouter createAppRouter(AuthBloc authBloc) => GoRouter(
     GoRoute(path: AppRoutes.welcome, builder: (_, _) => const WelcomePage()),
     GoRoute(
       path: AppRoutes.signIn,
-      builder: (_, _) => const PhoneSignInPage(),
+      builder: (_, _) => const SignInOptionsPage(),
       routes: [
+        GoRoute(path: 'phone', builder: (_, _) => const PhoneSignInPage()),
         GoRoute(path: 'email', builder: (_, _) => const EmailSignInPage()),
       ],
     ),

@@ -29,3 +29,5 @@ class MockSignOut extends Mock implements SignOut {}
 class MockSendPhoneCode extends Mock implements SendPhoneCode {}
 
 class MockConfirmPhoneCode extends Mock implements ConfirmPhoneCode {}
+
+class MockSignInWithGoogle extends Mock implements SignInWithGoogle {}

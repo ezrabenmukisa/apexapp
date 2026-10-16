@@ -22,6 +22,7 @@ void main() {
       expect(authRedirect(signedOut, AppRoutes.splash), AppRoutes.welcome);
       expect(authRedirect(signedOut, AppRoutes.owner), AppRoutes.welcome);
       expect(authRedirect(signedOut, AppRoutes.signIn), isNull);
+      expect(authRedirect(signedOut, AppRoutes.signInPhone), isNull);
       expect(authRedirect(signedOut, AppRoutes.signInEmail), isNull);
     });
 

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'exceptions.dart';
 import 'failures.dart';
@@ -9,6 +10,7 @@ Failure mapErrorToFailure(Object error) => switch (error) {
   Failure() => error,
   DioException() => _fromDio(error),
   FirebaseAuthException() => mapFirebaseAuthError(error),
+  GoogleSignInException() => _fromGoogle(error),
   ServerException(:final message, :final statusCode) => ServerFailure(
     message,
     statusCode: statusCode,
@@ -49,6 +51,23 @@ String? _messageFromBody(Object? data) {
   };
 }
 
+/// Code of the [AuthFailure] returned when the user dismisses a sign-in UI.
+const authCancelledCode = 'cancelled';
+
+AuthFailure _fromGoogle(GoogleSignInException e) => switch (e.code) {
+  GoogleSignInExceptionCode.canceled || GoogleSignInExceptionCode.interrupted =>
+    const AuthFailure('Google sign-in was cancelled.', code: authCancelledCode),
+  GoogleSignInExceptionCode.clientConfigurationError ||
+  GoogleSignInExceptionCode.providerConfigurationError => const AuthFailure(
+    'Google sign-in isn\'t set up for this app yet. Use phone or email.',
+    code: 'google-not-configured',
+  ),
+  _ => AuthFailure(
+    e.description ?? 'Google sign-in failed. Please try again.',
+    code: 'google-${e.code.name}',
+  ),
+};
+
 AuthFailure mapFirebaseAuthError(FirebaseAuthException e) {
   final message = switch (e.code) {
     'invalid-phone-number' => 'That phone number doesn\'t look right.',
@@ -68,6 +87,8 @@ AuthFailure mapFirebaseAuthError(FirebaseAuthException e) {
     'email-already-in-use' =>
       'An account already exists for that email. Log in instead.',
     'weak-password' => 'Choose a password with at least 6 characters.',
+    'account-exists-with-different-credential' =>
+      'This email already signs in another way. Use that method instead.',
     'network-request-failed' =>
       'No connection. Check your signal and try again.',
     _ => e.message ?? 'Sign-in failed. Please try again.',

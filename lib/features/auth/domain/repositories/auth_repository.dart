@@ -24,6 +24,11 @@ abstract interface class AuthRepository {
     required String smsCode,
   });
 
+  /// Native Google account picker, then Firebase sign-in with the ID token.
+  /// Fails with an [AuthFailure] whose code is `cancelled` if the user
+  /// dismisses the picker.
+  Future<Either<Failure, Unit>> signInWithGoogle();
+
   Future<Either<Failure, Unit>> signInWithEmail({
     required String email,
     required String password,

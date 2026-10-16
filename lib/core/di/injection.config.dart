@@ -39,10 +39,13 @@ import 'package:app/features/auth/presentation/bloc/email_auth_cubit.dart'
     as _i686;
 import 'package:app/features/auth/presentation/bloc/phone_auth_cubit.dart'
     as _i459;
+import 'package:app/features/auth/presentation/bloc/sign_in_options_cubit.dart'
+    as _i782;
 import 'package:dio/dio.dart' as _i361;
 import 'package:firebase_auth/firebase_auth.dart' as _i59;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart' as _i558;
 import 'package:get_it/get_it.dart' as _i174;
+import 'package:google_sign_in/google_sign_in.dart' as _i116;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:logger/logger.dart' as _i974;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
@@ -63,6 +66,7 @@ extension GetItInjectableX on _i174.GetIt {
       preResolve: true,
     );
     gh.lazySingleton<_i59.FirebaseAuth>(() => registerModule.firebaseAuth);
+    gh.lazySingleton<_i116.GoogleSignIn>(() => registerModule.googleSignIn);
     gh.lazySingleton<_i558.FlutterSecureStorage>(
       () => registerModule.secureStorage,
     );
@@ -89,7 +93,10 @@ extension GetItInjectableX on _i174.GetIt {
       () => registerModule.dio(gh<_i59.FirebaseAuth>(), gh<_i974.Logger>()),
     );
     gh.lazySingleton<_i510.FirebaseAuthDataSource>(
-      () => _i510.FirebaseAuthDataSource(gh<_i59.FirebaseAuth>()),
+      () => _i510.FirebaseAuthDataSource(
+        gh<_i59.FirebaseAuth>(),
+        gh<_i116.GoogleSignIn>(),
+      ),
     );
     gh.lazySingleton<_i607.ProfileApiDataSource>(
       () => _i607.ProfileApiDataSourceRemote(gh<_i361.Dio>()),
@@ -131,6 +138,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i72.ConfirmPhoneCode>(
       () => _i72.ConfirmPhoneCode(gh<_i765.AuthRepository>()),
     );
+    gh.factory<_i72.SignInWithGoogle>(
+      () => _i72.SignInWithGoogle(gh<_i765.AuthRepository>()),
+    );
     gh.factory<_i72.SignInWithEmail>(
       () => _i72.SignInWithEmail(gh<_i765.AuthRepository>()),
     );
@@ -150,6 +160,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i72.SignUpWithEmail>(),
         gh<_i72.SendPasswordReset>(),
       ),
+    );
+    gh.factory<_i782.SignInOptionsCubit>(
+      () => _i782.SignInOptionsCubit(gh<_i72.SignInWithGoogle>()),
     );
     gh.lazySingleton<_i200.AuthBloc>(
       () => _i200.AuthBloc(

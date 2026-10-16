@@ -47,7 +47,7 @@ flutter run --dart-define=USE_MOCK_API=false \
 
 ## Auth flow (issue #1)
 
-Firebase phone OTP (primary), or email/password ("Use email instead"), leads to `POST /auth/firebase {id_token}`, which returns `{user_id, profile_complete}`.
+Sign-in options screen: **Continue with Google** (google_sign_in → Firebase credential), **Continue with phone** (Firebase OTP) or **Continue with email** (email/password). All three lead to `POST /auth/firebase {id_token}`, which returns `{user_id, profile_complete}`.
 - If `profile_complete` is false, the router forces `/onboarding/profile`, which saves via `PATCH /users/me` (including `user_role`).
 - Otherwise the app calls `GET /users/me` and opens the owner (`/owner`) or site-manager (`/site`) shell by `user_role`.
 - Sign out is local only: `FirebaseAuth.signOut()` plus clearing the cached profile.
@@ -60,8 +60,12 @@ Firebase phone OTP (primary), or email/password ("Use email instead"), leads to 
 Use the tokens in `core/theme/`. Never hard-code colours or fonts in features.
 - Paper `#F6F2EA` ground, Surface `#FFFDF8` cards, Ink `#1F1B16` text and primary buttons. Laterite `#A4441F` is for the brand mark and focus only.
 - Status colour pairs: approved, awaiting, changes, flagged, not started. Status is never shown by colour alone; always add a label.
-- Fonts: Newsreader for titles and money, Hanken Grotesk for the UI, IBM Plex Mono for proof data (coords, timestamps).
+- Fonts: Newsreader for titles and money, Hanken Grotesk for the UI, IBM Plex Mono for proof data (coords, timestamps). They are bundled in `assets/fonts/` and declared in `pubspec.yaml`; never fetch fonts at runtime (no google_fonts).
 - 4-pt spacing, radius 4/8/14, flat surfaces (shadows only on floating sheets), touch targets of at least 48 px.
+
+## Firebase
+
+Project `apex-9fcb6`; app id `com.apex.app` on Android and iOS. Regenerate config with `flutterfire configure --project=apex-9fcb6 --platforms=android,ios --android-package-name=com.apex.app --ios-bundle-id=com.apex.app`.
 
 ## Checks
 

@@ -57,9 +57,13 @@ class _CompleteProfileViewState extends State<_CompleteProfileView> {
   void initState() {
     super.initState();
     final identity = context.read<AuthBloc>().state.identity;
-    _first = TextEditingController();
+    // Google accounts carry a display name; split it as a starting point.
+    final names = identity?.displayName?.trim().split(RegExp(r'\s+')) ?? [];
+    _first = TextEditingController(text: names.isEmpty ? null : names.first);
     _middle = TextEditingController();
-    _last = TextEditingController();
+    _last = TextEditingController(
+      text: names.length > 1 ? names.sublist(1).join(' ') : null,
+    );
     _email = TextEditingController(text: identity?.email);
     _phone = TextEditingController(text: identity?.phoneNumber);
     _phoneVerified = identity?.phoneNumber?.isNotEmpty ?? false;

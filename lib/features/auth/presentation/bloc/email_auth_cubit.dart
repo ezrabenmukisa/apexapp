@@ -25,7 +25,7 @@ final class EmailAuthState extends Equatable {
   List<Object?> get props => [mode, status, error];
 }
 
-/// "Use email instead": email + password sign-in or account creation.
+/// "Continue with email": email + password sign-in or account creation.
 @injectable
 class EmailAuthCubit extends Cubit<EmailAuthState> {
   EmailAuthCubit(this._signIn, this._signUp, this._sendPasswordReset)

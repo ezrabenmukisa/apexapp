@@ -49,6 +49,17 @@ class ConfirmPhoneCode implements UseCase<Unit, ConfirmPhoneCodeParams> {
       );
 }
 
+@injectable
+class SignInWithGoogle implements UseCase<Unit, NoParams> {
+  const SignInWithGoogle(this._repository);
+
+  final AuthRepository _repository;
+
+  @override
+  Future<Either<Failure, Unit>> call(NoParams params) =>
+      _repository.signInWithGoogle();
+}
+
 typedef EmailCredentials = ({String email, String password});
 
 @injectable
