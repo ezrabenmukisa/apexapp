@@ -42,9 +42,9 @@ void main() {
   testWidgets('sending a code shows the 6-digit field and verifies', (
     tester,
   ) async {
-    when(
-      () => sendCode(any()),
-    ).thenAnswer((_) async => const Right(SmsCodeSent(verificationId: 'v1')));
+    when(() => sendCode(any())).thenAnswer(
+      (_) async => const Right(SmsCodeSent(verificationId: 'v1')),
+    );
     when(() => confirmCode(any())).thenAnswer((_) async => const Right(unit));
 
     await tester.pumpWidget(

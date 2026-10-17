@@ -19,12 +19,17 @@ lib/
     presentation/  bloc (Bloc/Cubit + state), pages, widgets
 ```
 
+Features: `auth` (sign-in, onboarding), `projects` (#2), `milestones` (#3), `evidence` (#4 — capture, outbox, review), `notifications` (#5), `account` (settings, permissions).
+
 Rules:
 - Dependencies point inward. `presentation` → `domain` ← `data`. Domain imports no Flutter, Dio or Firebase.
 - Repositories return `Either<Failure, T>` (fpdart) and never throw. Data sources throw, and `mapErrorToFailure` converts.
 - Every use case is an `@injectable` class with `call`.
 - Blocs/cubits never navigate. `AuthBloc` state drives `go_router` redirects (`core/router/auth_redirect.dart`).
 - DI is `get_it` + `injectable`. Run `dart run build_runner build` after adding or changing annotations.
+- Screens that load data use `LoadCubit<T>` + `LoadView` (`core/bloc/`): loading/error/retry, actions with snackbars, and silent reload when another screen publishes a change on `DataChanges` (`core/sync/`). Repositories publish after every successful write.
+- Cubits shared across tabs and full-screen pages (dashboard, inbox, site assignment, outbox, evidence draft, settings) live in `SessionScope` (`core/navigation/session_scope.dart`), rebuilt per signed-in user.
+- Device capabilities (GPS, camera, receipts picker, geocoding, permissions, FCM token) are interfaces in `core/device/device_services.dart`. The current implementations are **simulations**; swap in real plugins there.
 
 ## Material: `material_ui`, not `flutter/material`
 
@@ -43,7 +48,9 @@ Use `appLogger` (`core/logging/app_logger.dart`); never `print`. It is silent ou
 
 Every backend data source has an interface plus two implementations:
 - `XxxRemote` annotated `@remote` (Dio).
-- `XxxMock` annotated `@mock` (in-memory/shared-prefs seed data, `AppConfig.mockLatency`).
+- `XxxMock` annotated `@mock`, backed by `MockApiServer` (`core/mock/`). It is an in-app fake backend that stores API-shaped JSON per user in shared prefs, enforces owner-only writes and seeds the prototype's sample project for the user's role.
+
+Assumed enum values and response shapes are listed in `docs/api-assumptions.md`.
 
 `--dart-define=USE_MOCK_API=false` switches every feature to the real API (default: mocks). Firebase Auth is always real. When an endpoint goes live, only the `@remote` class changes.
 
@@ -80,3 +87,5 @@ Project `apex-9fcb6`; app id `com.apex.app` on Android and iOS. Full console set
 ```sh
 flutter analyze && flutter test
 ```
+
+`test/app/` holds end-to-end widget tests. They boot the real app with a fake Firebase user against `MockApiServer` and walk the owner and site-manager flows. Overflows and runtime errors fail them.
