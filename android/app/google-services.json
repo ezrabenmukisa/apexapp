@@ -7,12 +7,33 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:914541790823:android:6e13ac63fdf643716bf6c2",
+        "mobilesdk_app_id": "1:914541790823:android:d2f4765b9b7949586bf6c2",
         "android_client_info": {
-          "package_name": "com.example.app"
+          "package_name": "com.apex.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "914541790823-ic391usc3s2ub8eapmrf5359c0if92e2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.apex.app",
+            "certificate_hash": "bf56c7f7ee1d742826f723dc7be7723baaea58f7"
+          }
+        },
+        {
+          "client_id": "914541790823-skgu73tgdqculuurdnmm1on7eb1le08u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.apex.app",
+            "certificate_hash": "22441dcfacfd93fbbdce7696b18c7f80ab1809bd"
+          }
+        },
+        {
+          "client_id": "914541790823-1ha877b4dftef9th5ucn304egqdthpoq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC-CVrYqRM3VrZVG1NonSrLdnY0yJ1aG10"
@@ -20,7 +41,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "914541790823-1ha877b4dftef9th5ucn304egqdthpoq.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "914541790823-juafrrab3egfq4dc40drptffmem3r7lh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.apex.app"
+              }
+            }
+          ]
         }
       }
     }

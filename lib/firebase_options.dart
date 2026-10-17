@@ -51,18 +51,19 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyC-CVrYqRM3VrZVG1NonSrLdnY0yJ1aG10',
-    appId: '1:914541790823:android:6e13ac63fdf643716bf6c2',
+    appId: '1:914541790823:android:d2f4765b9b7949586bf6c2',
     messagingSenderId: '914541790823',
     projectId: 'apex-9fcb6',
     storageBucket: 'apex-9fcb6.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAgjGUf-o9UBBZCddt3RcSxeppNAPeDiVE',
-    appId: '1:914541790823:ios:0be69c1fd6f9f2d96bf6c2',
+    appId: '1:914541790823:ios:db73b412afd89d2b6bf6c2',
     messagingSenderId: '914541790823',
     projectId: 'apex-9fcb6',
     storageBucket: 'apex-9fcb6.firebasestorage.app',
-    iosBundleId: 'com.example.app',
+    androidClientId: '914541790823-ic391usc3s2ub8eapmrf5359c0if92e2.apps.googleusercontent.com',
+    iosClientId: '914541790823-juafrrab3egfq4dc40drptffmem3r7lh.apps.googleusercontent.com',
+    iosBundleId: 'com.apex.app',
   );
 }

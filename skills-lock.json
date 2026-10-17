@@ -144,12 +144,6 @@
       "sourceType": "github",
       "skillPath": "skills/flutter-setup-localization/SKILL.md",
       "computedHash": "671bf254ca8f3172b6bda5287d9e756e9fd5b49165a815f710c5b707ebaa38f8"
-    },
-    "flutter-use-http-package": {
-      "source": "flutter/skills",
-      "sourceType": "github",
-      "skillPath": "skills/flutter-use-http-package/SKILL.md",
-      "computedHash": "17efcf4da9933afaf9c1d41940bd6b92f1ae73dcae4bf6c59cfe24f7e487ee9f"
     }
   }
 }
