@@ -36,7 +36,7 @@ class _ApexAppState extends State<ApexApp> {
   Widget build(BuildContext context) => BlocProvider.value(
     value: _authBloc,
     child: MaterialApp.router(
-      title: 'Siteproof',
+      title: 'Apex',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: _router,
