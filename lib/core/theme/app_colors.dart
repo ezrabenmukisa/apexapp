@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-/// Siteproof "field ledger" palette (docs: 01 Foundations).
+/// Apex "field ledger" palette (docs: 01 Foundations).
 ///
 /// Primary actions are [ink], not [laterite]. The brand colour is reserved
 /// for the mark, focus rings and the one figure on a screen that matters most.

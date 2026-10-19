@@ -133,7 +133,7 @@ class _SiteJoinView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SectionLabel('Siteproof needs'),
+                      const SectionLabel('Apex needs'),
                       AppCardList(
                         children: [
                           _PermissionRow(

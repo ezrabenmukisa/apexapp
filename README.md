@@ -1,4 +1,4 @@
-# Apex (Siteproof)
+# Apex
 
 Flutter app for remotely funded building projects: owners plan milestones and review evidence; site managers capture GPS- and time-stamped evidence on site.
 

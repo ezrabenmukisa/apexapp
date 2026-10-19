@@ -1,10 +1,10 @@
-# Apex (Siteproof) — Flutter app
+# Apex — Flutter app
 
 Evidence and accountability app for remotely funded physical projects. Owners plan projects and review evidence; site managers submit geotagged evidence from site.
 
 Specs live outside this repo in `../docs/`:
 - `Apex_API_Operations.pdf`: ER diagram and REST contract (`/api/v1`, FastAPI, Firebase ID token auth).
-- `Mobile app design clarification/siteproof/*.html`: prototype screens (390×844) plus `01 Foundations` / `02 Components` design system.
+- `Mobile app design clarification/siteproof/*.html`: prototype screens (390×844) plus `01 Foundations` / `02 Components` design system. "Siteproof" was the prototype's working name; the product is Apex.
 
 ## Architecture
 

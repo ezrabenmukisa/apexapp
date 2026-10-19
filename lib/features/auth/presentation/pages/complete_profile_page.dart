@@ -274,7 +274,7 @@ class _RolePicker extends StatelessWidget {
       if (showError) ...[
         const SizedBox(height: 6),
         Text(
-          'Choose how you\'ll use Siteproof',
+          'Choose how you\'ll use Apex',
           style: AppTextStyles.small.copyWith(color: AppColors.flagged),
         ),
       ],

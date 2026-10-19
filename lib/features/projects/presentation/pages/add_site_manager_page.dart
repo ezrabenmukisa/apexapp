@@ -85,7 +85,7 @@ class _AddSiteManagerViewState extends State<_AddSiteManagerView> {
       ),
       LabeledField(
         label: 'Their email',
-        helper: 'They sign in to Siteproof with this email to see the project.',
+        helper: 'They sign in to Apex with this email to see the project.',
         child: TextFormField(
           controller: _email,
           keyboardType: TextInputType.emailAddress,

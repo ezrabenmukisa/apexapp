@@ -2,9 +2,9 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
-import '../../widgets/siteproof_mark.dart';
+import '../../widgets/apex_logo.dart';
 
-/// Home header: Siteproof logo with a notifications bell (dot when unread).
+/// Home header: Apex logo with a notifications bell (dot when unread).
 class ApexAppBar extends StatelessWidget {
   const ApexAppBar({super.key, this.hasUnread = false, this.onBell});
 
@@ -14,7 +14,7 @@ class ApexAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      const SiteproofLogo(),
+      const ApexLogo(),
       const Spacer(),
       if (onBell != null)
         Semantics(

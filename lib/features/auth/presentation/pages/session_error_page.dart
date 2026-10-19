@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/siteproof_mark.dart';
+import '../../../../core/widgets/apex_logo.dart';
 import '../bloc/auth_bloc.dart';
 
 /// Signed in to Firebase, but the Apex backend couldn't be reached.
@@ -20,10 +20,7 @@ class SessionErrorPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: SiteproofLogo(),
-              ),
+              const Align(alignment: Alignment.centerLeft, child: ApexLogo()),
               const Spacer(),
               Text(
                 'We couldn\'t open your account',

@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../../../../core/widgets/siteproof_mark.dart';
+import '../../../../core/widgets/apex_logo.dart';
 
 /// Shown while the session is being resolved at start-up.
 class SplashPage extends StatelessWidget {
@@ -12,7 +12,7 @@ class SplashPage extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SiteproofLogo(),
+          ApexLogo(),
           SizedBox(height: 32),
           SizedBox.square(
             dimension: 20,
