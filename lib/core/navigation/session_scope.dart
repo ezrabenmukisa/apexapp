@@ -22,7 +22,10 @@ class SessionScope extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.select((AuthBloc b) => b.state.user);
+    final user = context.select(
+      (AuthBloc b) =>
+          b.state.status == AuthStatus.authenticated ? b.state.user : null,
+    );
     if (user == null) return child;
     final isManager = user.userRole == UserRole.manager;
     return KeyedSubtree(

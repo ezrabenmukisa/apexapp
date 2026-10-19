@@ -123,7 +123,7 @@ $ANDROID_HOME/build-tools/<version>/apksigner verify --print-certs build/app/out
 
 ## 6. Verify
 
-1. `flutter run` on an Android device or emulator (the mock API is the default, so no backend is needed).
+1. `cp .env.example .env` (first time only), then `flutter run` on an Android device or emulator. Sign-in uses the live API at apex.pntr.dev; other features use the in-app mock until their endpoints ship.
 2. Try each option on *Sign in to Siteproof*:
    - **Google:** the account sheet appears, then you land on Complete Profile with your name prefilled.
    - **Phone:** enter a test number from step 2, then its fixed code, then Complete Profile with the phone prefilled.

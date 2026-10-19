@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 
-import '../../../../core/di/injection.dart';
 import '../../../../core/mock/mock_api_server.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/utils/json.dart';
@@ -15,8 +14,7 @@ abstract interface class NotificationsDataSource {
   Future<void> registerPushToken(String token, DevicePlatform platform);
 }
 
-@remote
-@LazySingleton(as: NotificationsDataSource)
+@lazySingleton
 class NotificationsDataSourceRemote implements NotificationsDataSource {
   const NotificationsDataSourceRemote(this._dio);
 
@@ -46,8 +44,7 @@ class NotificationsDataSourceRemote implements NotificationsDataSource {
       );
 }
 
-@mock
-@LazySingleton(as: NotificationsDataSource)
+@lazySingleton
 class NotificationsDataSourceMock implements NotificationsDataSource {
   const NotificationsDataSourceMock(this._server);
 
@@ -55,7 +52,7 @@ class NotificationsDataSourceMock implements NotificationsDataSource {
 
   @override
   Future<List<AppNotification>> list({bool unreadOnly = false}) async {
-    await _server.latency();
+    await _server.ready();
     return _server
         .listNotifications(unreadOnly: unreadOnly)
         .map(NotificationModel.fromJson)
@@ -64,11 +61,13 @@ class NotificationsDataSourceMock implements NotificationsDataSource {
 
   @override
   Future<void> markRead(String notificationId, {required bool isRead}) async {
+    await _server.ready();
     _server.markNotification(notificationId, isRead);
   }
 
   @override
   Future<void> registerPushToken(String token, DevicePlatform platform) async {
+    await _server.ready();
     _server.registerPushToken(token, platform.apiValue);
   }
 }

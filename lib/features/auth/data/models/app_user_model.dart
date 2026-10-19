@@ -29,11 +29,13 @@ abstract final class AppUserModel {
 }
 
 /// Request body for `PATCH /users/me`; only fields that are set are sent.
+///
+/// `user_role` is not part of the live API, so it is never sent; the role is
+/// kept on the phone (`RoleLocalDataSource`).
 Map<String, dynamic> profileUpdateToJson(ProfileUpdate update) => {
   'first_name': ?update.firstName,
   'middle_name': ?update.middleName,
   'last_name': ?update.lastName,
   'contact_email': ?update.contactEmail,
   'contact_phone': ?update.contactPhone,
-  'user_role': ?update.userRole?.apiValue,
 };
