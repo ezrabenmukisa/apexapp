@@ -27,7 +27,7 @@ class SettingsCubit extends Cubit<AppSettings> {
   }
 }
 
-/// Status of the phone permissions Siteproof needs.
+/// Status of the phone permissions Apex needs.
 @injectable
 class PermissionsCubit extends Cubit<Map<DevicePermission, PermissionState>> {
   PermissionsCubit(this._service) : super(const {});

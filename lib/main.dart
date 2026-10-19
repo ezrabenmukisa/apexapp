@@ -15,12 +15,48 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kDebugMode) _installDebugLogging();
   _registerFontLicenses();
+  try {
+    await AppConfig.load();
+  } on ConfigError catch (e) {
+    appLogger.e(e.message);
+    return runApp(_ConfigErrorApp(e.message));
+  }
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await configureDependencies();
   appLogger.i(
-    'Apex started · ${AppConfig.useMockApi ? 'MOCK API' : AppConfig.apiBaseUrl}',
+    'Apex started · API ${AppConfig.apiBaseUrl} · live: ${AppConfig.live}',
   );
   runApp(const ApexApp());
+}
+
+/// Shown instead of the app when `.env` is missing or invalid.
+class _ConfigErrorApp extends StatelessWidget {
+  const _ConfigErrorApp(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'App configuration error',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              Text(message),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 /// Debug builds only: log bloc traffic and every uncaught error.

@@ -74,7 +74,7 @@ void main() {
     expect(find.text('Enter your first name'), findsOneWidget);
     expect(find.text('Enter your last name'), findsOneWidget);
     expect(find.text('Enter your email'), findsOneWidget);
-    expect(find.text('Choose how you\'ll use Siteproof'), findsOneWidget);
+    expect(find.text('Choose how you\'ll use Apex'), findsOneWidget);
     verifyNever(() => updateProfile(any()));
   });
 

@@ -1,23 +1,25 @@
+import 'package:app/features/auth/data/datasources/role_local_data_source.dart';
 import 'package:app/features/auth/data/repositories/profile_repository_impl.dart';
 import 'package:app/features/auth/domain/entities/app_user.dart';
 import 'package:app/features/auth/domain/entities/profile_update.dart';
 import 'package:app/features/auth/domain/entities/user_role.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../helpers/fixtures.dart';
 import '../../../../helpers/mocks.dart';
 
 void main() {
   late MockProfileApiDataSource api;
   late MockSessionLocalDataSource local;
   late MockFirebaseAuthDataSource firebase;
+  late RoleLocalDataSource roles;
   late ProfileRepositoryImpl repository;
 
-  const ownerWithoutRole = AppUser(
-    userId: 'usr_1',
+  /// What the live `/users/me` returns: no `user_role`.
+  const fromApi = AppUser(
+    userId: 'c0ffee00-0000-4000-8000-000000000001',
     firstName: 'Sarah',
     lastName: 'Namuli',
     contactEmail: 'sarah@example.com',
@@ -25,15 +27,17 @@ void main() {
   );
 
   setUpAll(() {
-    registerFallbackValue(tOwner);
+    registerFallbackValue(fromApi);
     registerFallbackValue(const ProfileUpdate());
   });
 
-  setUp(() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    roles = RoleLocalDataSource(await SharedPreferences.getInstance());
     api = MockProfileApiDataSource();
     local = MockSessionLocalDataSource();
     firebase = MockFirebaseAuthDataSource();
-    repository = ProfileRepositoryImpl(api, local, firebase);
+    repository = ProfileRepositoryImpl(api, local, roles, firebase);
     when(() => firebase.currentUid).thenReturn('fb-uid-1');
     when(
       () => local.cacheUser(any(), uid: any(named: 'uid')),
@@ -41,28 +45,40 @@ void main() {
   });
 
   group('getProfile', () {
-    test('returns and caches the API profile', () async {
-      when(() => api.getMe()).thenAnswer((_) async => tOwner);
-      when(
-        () => local.cachedUser(uid: 'fb-uid-1'),
-      ).thenAnswer((_) async => null);
+    test(
+      'returns the API profile with the role remembered on this phone',
+      () async {
+        await roles.write('fb-uid-1', UserRole.owner);
+        when(() => api.getMe()).thenAnswer((_) async => fromApi);
 
-      expect(await repository.getProfile(), const Right(tOwner));
-      verify(() => local.cacheUser(tOwner, uid: 'fb-uid-1')).called(1);
-    });
+        final user = (await repository.getProfile()).toNullable()!;
 
-    test('keeps the locally chosen role when the API omits it', () async {
-      when(() => api.getMe()).thenAnswer((_) async => ownerWithoutRole);
-      when(
-        () => local.cachedUser(uid: 'fb-uid-1'),
-      ).thenAnswer((_) async => tOwner);
+        expect(user.userId, fromApi.userId);
+        expect(user.userRole, UserRole.owner);
+        verify(() => local.cacheUser(user, uid: 'fb-uid-1')).called(1);
+      },
+    );
 
-      final result = await repository.getProfile();
+    test(
+      'role is unknown on a new phone (Complete Profile asks once)',
+      () async {
+        when(() => api.getMe()).thenAnswer((_) async => fromApi);
 
-      expect(result.toNullable()?.userRole, UserRole.owner);
+        final user = (await repository.getProfile()).toNullable()!;
+
+        expect(user.userRole, isNull);
+      },
+    );
+
+    test('roles are per Firebase account', () async {
+      await roles.write('someone-else', UserRole.manager);
+      when(() => api.getMe()).thenAnswer((_) async => fromApi);
+
+      expect((await repository.getProfile()).toNullable()!.userRole, isNull);
     });
 
     test('falls back to the cached profile when offline', () async {
+      await roles.write('fb-uid-1', UserRole.manager);
       when(() => api.getMe()).thenThrow(
         DioException(
           requestOptions: RequestOptions(),
@@ -71,35 +87,56 @@ void main() {
       );
       when(
         () => local.cachedUser(uid: 'fb-uid-1'),
-      ).thenAnswer((_) async => tOwner);
+      ).thenAnswer((_) async => fromApi);
 
-      expect(await repository.getProfile(), const Right(tOwner));
+      final user = (await repository.getProfile()).toNullable()!;
+
+      expect(user.firstName, 'Sarah');
+      expect(user.userRole, UserRole.manager);
     });
   });
 
-  test('updateProfile sends the role and caches the result', () async {
+  test('updateProfile remembers the chosen role for next sign-in', () async {
     const update = ProfileUpdate(
       firstName: 'Sarah',
       lastName: 'Namuli',
       contactEmail: 'sarah@example.com',
       userRole: UserRole.owner,
     );
-    when(() => api.updateMe(update)).thenAnswer((_) async => ownerWithoutRole);
+    when(() => api.updateMe(update)).thenAnswer((_) async => fromApi);
 
     final result = await repository.updateProfile(update);
 
     expect(result.toNullable()?.userRole, UserRole.owner);
-    verify(
-      () => local.cacheUser(
-        any(
-          that: isA<AppUser>().having(
-            (u) => u.userRole,
-            'role',
-            UserRole.owner,
-          ),
+    // Survives sign-out: the role store isn't part of the session cache.
+    expect(roles.read('fb-uid-1'), UserRole.owner);
+  });
+
+  test('API failure does not remember the role', () async {
+    when(() => api.updateMe(any())).thenThrow(
+      DioException(
+        requestOptions: RequestOptions(),
+        type: DioExceptionType.badResponse,
+        response: Response(
+          requestOptions: RequestOptions(),
+          statusCode: 422,
+          data: {
+            'detail': [
+              {'msg': 'value is not a valid email address'},
+            ],
+          },
         ),
-        uid: 'fb-uid-1',
       ),
-    ).called(1);
+    );
+
+    final result = await repository.updateProfile(
+      const ProfileUpdate(contactEmail: 'nope', userRole: UserRole.owner),
+    );
+
+    expect(
+      result.getLeft().toNullable()?.message,
+      'value is not a valid email address',
+    );
+    expect(roles.read('fb-uid-1'), isNull);
   });
 }

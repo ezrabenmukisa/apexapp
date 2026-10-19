@@ -4,15 +4,17 @@ import 'dart:math';
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../features/auth/data/datasources/mock_user_store.dart';
+import '../../features/auth/data/datasources/firebase_auth_data_source.dart';
+import '../../features/auth/data/datasources/role_local_data_source.dart';
+import '../../features/auth/data/datasources/session_local_data_source.dart';
 import '../config/app_config.dart';
-import '../di/injection.dart';
 import '../error/exceptions.dart';
 import '../utils/json.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 
-/// In-app stand-in for the Apex FastAPI backend while `USE_MOCK_API` is on.
+/// In-app stand-in for Apex endpoints the live backend doesn't have yet
+/// (used by features whose `LIVE_*` switch in `.env` is false).
 ///
 /// Stores rows in the same snake_case JSON shapes as the API contract, so
 /// mock data sources parse responses with the same models as the Dio ones.
@@ -20,13 +22,19 @@ typedef JsonMap = Map<String, dynamic>;
 /// and persists per Firebase user in shared preferences. The first time a
 /// user opens the app it is seeded with the prototype's sample project,
 /// from the point of view of their `user_role`.
-@mock
+///
+/// Identity comes from the real signed-in user: Firebase uid, the profile
+/// cached from `GET /users/me` and the role remembered on this phone.
 @lazySingleton
 class MockApiServer {
-  MockApiServer(this._users, this._prefs);
+  MockApiServer(this._auth, this._session, this._roles, this._prefs);
 
-  final MockUserStore _users;
+  final FirebaseAuthDataSource _auth;
+  final SessionLocalDataSource _session;
+  final RoleLocalDataSource _roles;
   final SharedPreferences _prefs;
+  JsonMap? _profile;
+  String? _userId;
   final _random = Random();
 
   String? _loadedUid;
@@ -42,19 +50,37 @@ class MockApiServer {
 
   // ---------------------------------------------------------------- infra
 
-  Future<void> latency() => Future<void>.delayed(AppConfig.mockLatency);
+  /// Simulated latency, then loads the signed-in user's data (seeding it on
+  /// first use). Every mock data source call awaits this first.
+  Future<void> ready() async {
+    await Future<void>.delayed(AppConfig.mockLatency);
+    final uid = _auth.currentUid;
+    if (uid == null) {
+      throw const ServerException('Not authenticated', statusCode: 401);
+    }
+    if (_loadedUid == uid) return;
+    final user = await _session.cachedUser(uid: uid);
+    _userId = user?.userId ?? 'usr_$uid';
+    _profile = {
+      'first_name': user?.firstName ?? 'You',
+      'last_name': user?.lastName ?? '',
+      'contact_email': user?.contactEmail ?? '',
+      'user_role': (_roles.read(uid) ?? user?.userRole)?.apiValue,
+    };
+    _load(uid);
+  }
 
-  String get _uid => _users.currentUid();
-  String get _me => _users.currentUserId();
+  String get _uid => _loadedUid!;
+  String get _me => _userId!;
 
   List<JsonMap> _table(String name) {
-    _ensureLoaded();
+    if (_loadedUid == null) {
+      throw StateError('MockApiServer.ready() must be awaited first');
+    }
     return _db[name]!;
   }
 
-  void _ensureLoaded() {
-    final uid = _uid;
-    if (_loadedUid == uid) return;
+  void _load(String uid) {
     final raw = _prefs.getString(_key(uid));
     if (raw != null) {
       final decoded = jsonDecode(raw) as JsonMap;
@@ -66,6 +92,7 @@ class MockApiServer {
       };
     } else {
       _db = {for (final t in _tables) t: <JsonMap>[]};
+      _loadedUid = uid;
       _seed();
     }
     _loadedUid = uid;
@@ -89,8 +116,6 @@ class MockApiServer {
     'Only the project owner can do this.',
     statusCode: 403,
   );
-
-  JsonMap? get _profile => _users.currentProfile();
 
   String? _roleOn(String projectId) {
     for (final m in _table('members')) {

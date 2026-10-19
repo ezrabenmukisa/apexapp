@@ -56,16 +56,30 @@ class _CompleteProfileViewState extends State<_CompleteProfileView> {
   @override
   void initState() {
     super.initState();
-    final identity = context.read<AuthBloc>().state.identity;
+    final auth = context.read<AuthBloc>().state;
+    final identity = auth.identity;
+    // An existing profile (role unknown on this phone) wins; otherwise
+    // start from what the sign-in provider knows.
+    final existing = auth.user;
     // Google accounts carry a display name; split it as a starting point.
     final names = identity?.displayName?.trim().split(RegExp(r'\s+')) ?? [];
-    _first = TextEditingController(text: names.isEmpty ? null : names.first);
-    _middle = TextEditingController();
-    _last = TextEditingController(
-      text: names.length > 1 ? names.sublist(1).join(' ') : null,
+    _first = TextEditingController(
+      text: existing?.firstName ?? (names.isEmpty ? null : names.first),
     );
-    _email = TextEditingController(text: identity?.email);
-    _phone = TextEditingController(text: identity?.phoneNumber);
+    _middle = TextEditingController(text: existing?.middleName);
+    _last = TextEditingController(
+      text:
+          existing?.lastName ??
+          (names.length > 1 ? names.sublist(1).join(' ') : null),
+    );
+    _email = TextEditingController(
+      text: (existing?.contactEmail.isNotEmpty ?? false)
+          ? existing!.contactEmail
+          : identity?.email,
+    );
+    _phone = TextEditingController(
+      text: identity?.phoneNumber ?? existing?.contactPhone,
+    );
     _phoneVerified = identity?.phoneNumber?.isNotEmpty ?? false;
   }
 
@@ -260,7 +274,7 @@ class _RolePicker extends StatelessWidget {
       if (showError) ...[
         const SizedBox(height: 6),
         Text(
-          'Choose how you\'ll use Siteproof',
+          'Choose how you\'ll use Apex',
           style: AppTextStyles.small.copyWith(color: AppColors.flagged),
         ),
       ],

@@ -12,6 +12,7 @@
 
 import 'package:app/core/device/connectivity_service.dart' as _i511;
 import 'package:app/core/device/device_services.dart' as _i62;
+import 'package:app/core/di/data_source_module.dart' as _i1066;
 import 'package:app/core/di/register_module.dart' as _i313;
 import 'package:app/core/mock/mock_api_server.dart' as _i664;
 import 'package:app/core/sync/data_changes.dart' as _i833;
@@ -25,10 +26,10 @@ import 'package:app/features/auth/data/datasources/auth_api_data_source.dart'
     as _i491;
 import 'package:app/features/auth/data/datasources/firebase_auth_data_source.dart'
     as _i510;
-import 'package:app/features/auth/data/datasources/mock_user_store.dart'
-    as _i199;
 import 'package:app/features/auth/data/datasources/profile_api_data_source.dart'
     as _i607;
+import 'package:app/features/auth/data/datasources/role_local_data_source.dart'
+    as _i952;
 import 'package:app/features/auth/data/datasources/session_local_data_source.dart'
     as _i818;
 import 'package:app/features/auth/data/repositories/auth_repository_impl.dart'
@@ -42,7 +43,7 @@ import 'package:app/features/auth/domain/repositories/profile_repository.dart'
 import 'package:app/features/auth/domain/usecases/auth_usecases.dart' as _i72;
 import 'package:app/features/auth/domain/usecases/profile_usecases.dart'
     as _i1065;
-import 'package:app/features/auth/presentation/bloc/auth_bloc.dart' as _i200;
+import 'package:app/features/auth/presentation/bloc/auth_bloc.dart' as _i199;
 import 'package:app/features/auth/presentation/bloc/complete_profile_cubit.dart'
     as _i876;
 import 'package:app/features/auth/presentation/bloc/email_auth_cubit.dart'
@@ -103,9 +104,6 @@ import 'package:google_sign_in/google_sign_in.dart' as _i116;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
 
-const String _mock = 'mock';
-const String _remote = 'remote';
-
 extension GetItInjectableX on _i174.GetIt {
   // initializes the registration of main-scope dependencies inside of GetIt
   Future<_i174.GetIt> init({
@@ -114,6 +112,7 @@ extension GetItInjectableX on _i174.GetIt {
   }) async {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
     final registerModule = _$RegisterModule();
+    final dataSourceModule = _$DataSourceModule();
     await gh.singletonAsync<_i460.SharedPreferences>(
       () => registerModule.prefs,
       preResolve: true,
@@ -152,19 +151,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i19.PermissionsCubit>(
       () => _i19.PermissionsCubit(gh<_i62.PermissionsService>()),
     );
-    gh.lazySingleton<_i199.MockUserStore>(
-      () => _i199.MockUserStore(
-        gh<_i59.FirebaseAuth>(),
-        gh<_i460.SharedPreferences>(),
-      ),
-      registerFor: {_mock},
-    );
     gh.factory<_i283.EvidenceDraftCubit>(
       () => _i283.EvidenceDraftCubit(gh<_i62.ReceiptPicker>()),
     );
-    gh.lazySingleton<_i491.AuthApiDataSource>(
-      () => _i491.AuthApiDataSourceMock(gh<_i199.MockUserStore>()),
-      registerFor: {_mock},
+    gh.lazySingleton<_i952.RoleLocalDataSource>(
+      () => _i952.RoleLocalDataSource(gh<_i460.SharedPreferences>()),
     );
     gh.lazySingleton<_i576.SettingsRepository>(
       () => _i748.SettingsRepositoryImpl(gh<_i460.SharedPreferences>()),
@@ -172,28 +163,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i361.Dio>(
       () => registerModule.dio(gh<_i59.FirebaseAuth>()),
     );
-    gh.lazySingleton<_i607.ProfileApiDataSource>(
-      () => _i607.ProfileApiDataSourceMock(gh<_i199.MockUserStore>()),
-      registerFor: {_mock},
-    );
-    gh.lazySingleton<_i438.EvidenceDataSource>(
-      () => _i438.EvidenceDataSourceRemote(gh<_i361.Dio>()),
-      registerFor: {_remote},
-    );
     gh.factory<_i19.SettingsCubit>(
       () => _i19.SettingsCubit(gh<_i576.SettingsRepository>()),
-    );
-    gh.lazySingleton<_i584.NotificationsDataSource>(
-      () => _i584.NotificationsDataSourceRemote(gh<_i361.Dio>()),
-      registerFor: {_remote},
-    );
-    gh.lazySingleton<_i82.ProjectsDataSource>(
-      () => _i82.ProjectsDataSourceRemote(gh<_i361.Dio>()),
-      registerFor: {_remote},
-    );
-    gh.lazySingleton<_i787.MilestonesDataSource>(
-      () => _i787.MilestonesDataSourceRemote(gh<_i361.Dio>()),
-      registerFor: {_remote},
     );
     gh.lazySingleton<_i510.FirebaseAuthDataSource>(
       () => _i510.FirebaseAuthDataSource(
@@ -201,54 +172,41 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i116.GoogleSignIn>(),
       ),
     );
-    gh.lazySingleton<_i664.MockApiServer>(
-      () => _i664.MockApiServer(
-        gh<_i199.MockUserStore>(),
-        gh<_i460.SharedPreferences>(),
-      ),
-      registerFor: {_mock},
+    gh.lazySingleton<_i607.ProfileApiDataSource>(
+      () => _i607.ProfileApiDataSourceRemote(gh<_i361.Dio>()),
     );
     gh.lazySingleton<_i62.CaptureService>(
       () => _i62.SimulatedCaptureService(gh<_i62.LocationService>()),
     );
-    gh.lazySingleton<_i584.NotificationsDataSource>(
-      () => _i584.NotificationsDataSourceMock(gh<_i664.MockApiServer>()),
-      registerFor: {_mock},
+    gh.lazySingleton<_i491.AuthApiDataSource>(
+      () => _i491.AuthApiDataSourceRemote(gh<_i361.Dio>()),
     );
-    gh.lazySingleton<_i438.EvidenceDataSource>(
-      () => _i438.EvidenceDataSourceMock(gh<_i664.MockApiServer>()),
-      registerFor: {_mock},
-    );
-    gh.lazySingleton<_i820.NotificationsRepository>(
-      () => _i655.NotificationsRepositoryImpl(
-        gh<_i584.NotificationsDataSource>(),
-        gh<_i62.PushTokenProvider>(),
-        gh<_i833.DataChanges>(),
-      ),
-    );
-    gh.lazySingleton<_i849.EvidenceRepository>(
-      () => _i605.EvidenceRepositoryImpl(
-        gh<_i438.EvidenceDataSource>(),
-        gh<_i833.DataChanges>(),
-      ),
-    );
-    gh.lazySingleton<_i82.ProjectsDataSource>(
-      () => _i82.ProjectsDataSourceMock(gh<_i664.MockApiServer>()),
-      registerFor: {_mock},
-    );
-    gh.lazySingleton<_i849.OutboxRepository>(
-      () => _i272.OutboxRepositoryImpl(
-        gh<_i378.OutboxLocalDataSource>(),
-        gh<_i438.EvidenceDataSource>(),
+    gh.lazySingleton<_i765.AuthRepository>(
+      () => _i39.AuthRepositoryImpl(
         gh<_i510.FirebaseAuthDataSource>(),
-        gh<_i511.ConnectivityService>(),
-        gh<_i576.SettingsRepository>(),
-        gh<_i833.DataChanges>(),
+        gh<_i491.AuthApiDataSource>(),
+        gh<_i818.SessionLocalDataSource>(),
       ),
     );
-    gh.lazySingleton<_i607.ProfileApiDataSource>(
-      () => _i607.ProfileApiDataSourceRemote(gh<_i361.Dio>()),
-      registerFor: {_remote},
+    gh.lazySingleton<_i438.EvidenceDataSourceRemote>(
+      () => _i438.EvidenceDataSourceRemote(gh<_i361.Dio>()),
+    );
+    gh.lazySingleton<_i787.MilestonesDataSourceRemote>(
+      () => _i787.MilestonesDataSourceRemote(gh<_i361.Dio>()),
+    );
+    gh.lazySingleton<_i584.NotificationsDataSourceRemote>(
+      () => _i584.NotificationsDataSourceRemote(gh<_i361.Dio>()),
+    );
+    gh.lazySingleton<_i82.ProjectsDataSourceRemote>(
+      () => _i82.ProjectsDataSourceRemote(gh<_i361.Dio>()),
+    );
+    gh.lazySingleton<_i631.ProfileRepository>(
+      () => _i822.ProfileRepositoryImpl(
+        gh<_i607.ProfileApiDataSource>(),
+        gh<_i818.SessionLocalDataSource>(),
+        gh<_i952.RoleLocalDataSource>(),
+        gh<_i510.FirebaseAuthDataSource>(),
+      ),
     );
     gh.factory<_i283.CaptureCubit>(
       () => _i283.CaptureCubit(
@@ -256,39 +214,118 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i62.LocationService>(),
       ),
     );
-    gh.lazySingleton<_i491.AuthApiDataSource>(
-      () => _i491.AuthApiDataSourceRemote(gh<_i361.Dio>()),
-      registerFor: {_remote},
-    );
-    gh.factory<_i31.ReviewEvidence>(
-      () => _i31.ReviewEvidence(gh<_i849.EvidenceRepository>()),
-    );
-    gh.factory<_i31.EnqueueEvidence>(
-      () => _i31.EnqueueEvidence(gh<_i849.OutboxRepository>()),
-    );
-    gh.lazySingleton<_i631.ProfileRepository>(
-      () => _i822.ProfileRepositoryImpl(
-        gh<_i607.ProfileApiDataSource>(),
-        gh<_i818.SessionLocalDataSource>(),
+    gh.lazySingleton<_i664.MockApiServer>(
+      () => _i664.MockApiServer(
         gh<_i510.FirebaseAuthDataSource>(),
+        gh<_i818.SessionLocalDataSource>(),
+        gh<_i952.RoleLocalDataSource>(),
+        gh<_i460.SharedPreferences>(),
       ),
     );
-    gh.lazySingleton<_i787.MilestonesDataSource>(
+    gh.factory<_i1065.GetProfile>(
+      () => _i1065.GetProfile(gh<_i631.ProfileRepository>()),
+    );
+    gh.factory<_i1065.UpdateProfile>(
+      () => _i1065.UpdateProfile(gh<_i631.ProfileRepository>()),
+    );
+    gh.factory<_i876.CompleteProfileCubit>(
+      () => _i876.CompleteProfileCubit(gh<_i1065.UpdateProfile>()),
+    );
+    gh.lazySingleton<_i438.EvidenceDataSourceMock>(
+      () => _i438.EvidenceDataSourceMock(gh<_i664.MockApiServer>()),
+    );
+    gh.lazySingleton<_i787.MilestonesDataSourceMock>(
       () => _i787.MilestonesDataSourceMock(gh<_i664.MockApiServer>()),
-      registerFor: {_mock},
     );
-    gh.factory<_i838.ListNotifications>(
-      () => _i838.ListNotifications(gh<_i820.NotificationsRepository>()),
+    gh.lazySingleton<_i584.NotificationsDataSourceMock>(
+      () => _i584.NotificationsDataSourceMock(gh<_i664.MockApiServer>()),
     );
-    gh.factory<_i838.MarkNotificationRead>(
-      () => _i838.MarkNotificationRead(gh<_i820.NotificationsRepository>()),
+    gh.lazySingleton<_i82.ProjectsDataSourceMock>(
+      () => _i82.ProjectsDataSourceMock(gh<_i664.MockApiServer>()),
     );
-    gh.factory<_i838.RegisterPushToken>(
-      () => _i838.RegisterPushToken(gh<_i820.NotificationsRepository>()),
+    gh.lazySingleton<_i584.NotificationsDataSource>(
+      () => dataSourceModule.notifications(
+        gh<_i584.NotificationsDataSourceRemote>(),
+        gh<_i584.NotificationsDataSourceMock>(),
+      ),
+    );
+    gh.factory<_i72.WatchAuthIdentity>(
+      () => _i72.WatchAuthIdentity(gh<_i765.AuthRepository>()),
+    );
+    gh.factory<_i72.SendPhoneCode>(
+      () => _i72.SendPhoneCode(gh<_i765.AuthRepository>()),
+    );
+    gh.factory<_i72.ConfirmPhoneCode>(
+      () => _i72.ConfirmPhoneCode(gh<_i765.AuthRepository>()),
+    );
+    gh.factory<_i72.SignInWithGoogle>(
+      () => _i72.SignInWithGoogle(gh<_i765.AuthRepository>()),
+    );
+    gh.factory<_i72.SignInWithEmail>(
+      () => _i72.SignInWithEmail(gh<_i765.AuthRepository>()),
+    );
+    gh.factory<_i72.SignUpWithEmail>(
+      () => _i72.SignUpWithEmail(gh<_i765.AuthRepository>()),
+    );
+    gh.factory<_i72.SendPasswordReset>(
+      () => _i72.SendPasswordReset(gh<_i765.AuthRepository>()),
+    );
+    gh.factory<_i72.EstablishSession>(
+      () => _i72.EstablishSession(gh<_i765.AuthRepository>()),
+    );
+    gh.factory<_i72.SignOut>(() => _i72.SignOut(gh<_i765.AuthRepository>()));
+    gh.lazySingleton<_i787.MilestonesDataSource>(
+      () => dataSourceModule.milestones(
+        gh<_i787.MilestonesDataSourceRemote>(),
+        gh<_i787.MilestonesDataSourceMock>(),
+      ),
+    );
+    gh.lazySingleton<_i438.EvidenceDataSource>(
+      () => dataSourceModule.evidence(
+        gh<_i438.EvidenceDataSourceRemote>(),
+        gh<_i438.EvidenceDataSourceMock>(),
+      ),
+    );
+    gh.factory<_i686.EmailAuthCubit>(
+      () => _i686.EmailAuthCubit(
+        gh<_i72.SignInWithEmail>(),
+        gh<_i72.SignUpWithEmail>(),
+        gh<_i72.SendPasswordReset>(),
+      ),
+    );
+    gh.lazySingleton<_i82.ProjectsDataSource>(
+      () => dataSourceModule.projects(
+        gh<_i82.ProjectsDataSourceRemote>(),
+        gh<_i82.ProjectsDataSourceMock>(),
+      ),
+    );
+    gh.factory<_i782.SignInOptionsCubit>(
+      () => _i782.SignInOptionsCubit(gh<_i72.SignInWithGoogle>()),
+    );
+    gh.lazySingleton<_i199.AuthBloc>(
+      () => _i199.AuthBloc(
+        gh<_i72.WatchAuthIdentity>(),
+        gh<_i72.EstablishSession>(),
+        gh<_i1065.GetProfile>(),
+        gh<_i72.SignOut>(),
+      ),
+    );
+    gh.factory<_i459.PhoneAuthCubit>(
+      () => _i459.PhoneAuthCubit(
+        gh<_i72.SendPhoneCode>(),
+        gh<_i72.ConfirmPhoneCode>(),
+      ),
     );
     gh.lazySingleton<_i665.ProjectsRepository>(
       () => _i222.ProjectsRepositoryImpl(
         gh<_i82.ProjectsDataSource>(),
+        gh<_i833.DataChanges>(),
+      ),
+    );
+    gh.lazySingleton<_i820.NotificationsRepository>(
+      () => _i655.NotificationsRepositoryImpl(
+        gh<_i584.NotificationsDataSource>(),
+        gh<_i62.PushTokenProvider>(),
         gh<_i833.DataChanges>(),
       ),
     );
@@ -313,6 +350,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i314.ListProjectMembers>(
       () => _i314.ListProjectMembers(gh<_i665.ProjectsRepository>()),
     );
+    gh.lazySingleton<_i849.EvidenceRepository>(
+      () => _i605.EvidenceRepositoryImpl(
+        gh<_i438.EvidenceDataSource>(),
+        gh<_i833.DataChanges>(),
+      ),
+    );
     gh.factory<_i870.ProjectFormCubit>(
       () => _i870.ProjectFormCubit(
         gh<_i314.CreateProject>(),
@@ -321,11 +364,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i62.GeocodingService>(),
       ),
     );
-    gh.lazySingleton<_i765.AuthRepository>(
-      () => _i39.AuthRepositoryImpl(
+    gh.lazySingleton<_i849.OutboxRepository>(
+      () => _i272.OutboxRepositoryImpl(
+        gh<_i378.OutboxLocalDataSource>(),
+        gh<_i438.EvidenceDataSource>(),
         gh<_i510.FirebaseAuthDataSource>(),
-        gh<_i491.AuthApiDataSource>(),
-        gh<_i818.SessionLocalDataSource>(),
+        gh<_i511.ConnectivityService>(),
+        gh<_i576.SettingsRepository>(),
+        gh<_i833.DataChanges>(),
       ),
     );
     gh.factoryParam<_i870.TeamCubit, String?, dynamic>(
@@ -336,11 +382,8 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i833.DataChanges>(),
       ),
     );
-    gh.factory<_i1065.GetProfile>(
-      () => _i1065.GetProfile(gh<_i631.ProfileRepository>()),
-    );
-    gh.factory<_i1065.UpdateProfile>(
-      () => _i1065.UpdateProfile(gh<_i631.ProfileRepository>()),
+    gh.factory<_i31.ReviewEvidence>(
+      () => _i31.ReviewEvidence(gh<_i849.EvidenceRepository>()),
     );
     gh.factory<_i314.GetOwnerDashboard>(
       () => _i314.GetOwnerDashboard(
@@ -354,22 +397,17 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i537.MilestonesRepository>(),
       ),
     );
-    gh.factory<_i178.InboxCubit>(
-      () => _i178.InboxCubit(
-        gh<_i838.ListNotifications>(),
-        gh<_i838.MarkNotificationRead>(),
-        gh<_i833.DataChanges>(),
-      ),
+    gh.factory<_i31.EnqueueEvidence>(
+      () => _i31.EnqueueEvidence(gh<_i849.OutboxRepository>()),
     );
-    gh.factory<_i283.OutboxCubit>(
-      () => _i283.OutboxCubit(
-        gh<_i849.OutboxRepository>(),
-        gh<_i31.EnqueueEvidence>(),
-        gh<_i511.ConnectivityService>(),
-      ),
+    gh.factory<_i838.ListNotifications>(
+      () => _i838.ListNotifications(gh<_i820.NotificationsRepository>()),
     );
-    gh.factory<_i876.CompleteProfileCubit>(
-      () => _i876.CompleteProfileCubit(gh<_i1065.UpdateProfile>()),
+    gh.factory<_i838.MarkNotificationRead>(
+      () => _i838.MarkNotificationRead(gh<_i820.NotificationsRepository>()),
+    );
+    gh.factory<_i838.RegisterPushToken>(
+      () => _i838.RegisterPushToken(gh<_i820.NotificationsRepository>()),
     );
     gh.factory<_i870.DashboardCubit>(
       () => _i870.DashboardCubit(
@@ -415,31 +453,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i849.EvidenceRepository>(),
       ),
     );
-    gh.factory<_i72.WatchAuthIdentity>(
-      () => _i72.WatchAuthIdentity(gh<_i765.AuthRepository>()),
-    );
-    gh.factory<_i72.SendPhoneCode>(
-      () => _i72.SendPhoneCode(gh<_i765.AuthRepository>()),
-    );
-    gh.factory<_i72.ConfirmPhoneCode>(
-      () => _i72.ConfirmPhoneCode(gh<_i765.AuthRepository>()),
-    );
-    gh.factory<_i72.SignInWithGoogle>(
-      () => _i72.SignInWithGoogle(gh<_i765.AuthRepository>()),
-    );
-    gh.factory<_i72.SignInWithEmail>(
-      () => _i72.SignInWithEmail(gh<_i765.AuthRepository>()),
-    );
-    gh.factory<_i72.SignUpWithEmail>(
-      () => _i72.SignUpWithEmail(gh<_i765.AuthRepository>()),
-    );
-    gh.factory<_i72.SendPasswordReset>(
-      () => _i72.SendPasswordReset(gh<_i765.AuthRepository>()),
-    );
-    gh.factory<_i72.EstablishSession>(
-      () => _i72.EstablishSession(gh<_i765.AuthRepository>()),
-    );
-    gh.factory<_i72.SignOut>(() => _i72.SignOut(gh<_i765.AuthRepository>()));
     gh.factory<_i283.SiteCubit>(
       () => _i283.SiteCubit(
         gh<_i31.GetSiteAssignment>(),
@@ -447,28 +460,24 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i833.DataChanges>(),
       ),
     );
-    gh.factory<_i686.EmailAuthCubit>(
-      () => _i686.EmailAuthCubit(
-        gh<_i72.SignInWithEmail>(),
-        gh<_i72.SignUpWithEmail>(),
-        gh<_i72.SendPasswordReset>(),
-      ),
-    );
-    gh.factory<_i782.SignInOptionsCubit>(
-      () => _i782.SignInOptionsCubit(gh<_i72.SignInWithGoogle>()),
-    );
-    gh.lazySingleton<_i200.AuthBloc>(
-      () => _i200.AuthBloc(
-        gh<_i72.WatchAuthIdentity>(),
-        gh<_i72.EstablishSession>(),
-        gh<_i1065.GetProfile>(),
-        gh<_i72.SignOut>(),
+    gh.factory<_i178.InboxCubit>(
+      () => _i178.InboxCubit(
+        gh<_i838.ListNotifications>(),
+        gh<_i838.MarkNotificationRead>(),
+        gh<_i833.DataChanges>(),
       ),
     );
     gh.factory<_i762.EditMilestoneCubit>(
       () => _i762.EditMilestoneCubit(
         gh<_i85.CreateMilestone>(),
         gh<_i85.UpdateMilestone>(),
+      ),
+    );
+    gh.factory<_i283.OutboxCubit>(
+      () => _i283.OutboxCubit(
+        gh<_i849.OutboxRepository>(),
+        gh<_i31.EnqueueEvidence>(),
+        gh<_i511.ConnectivityService>(),
       ),
     );
     gh.factoryParam<_i283.ReviewEvidenceCubit, String?, dynamic>(
@@ -479,14 +488,10 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i833.DataChanges>(),
       ),
     );
-    gh.factory<_i459.PhoneAuthCubit>(
-      () => _i459.PhoneAuthCubit(
-        gh<_i72.SendPhoneCode>(),
-        gh<_i72.ConfirmPhoneCode>(),
-      ),
-    );
     return this;
   }
 }
 
 class _$RegisterModule extends _i313.RegisterModule {}
+
+class _$DataSourceModule extends _i1066.DataSourceModule {}

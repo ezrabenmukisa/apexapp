@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 
-import '../../../../core/di/injection.dart';
 import '../../../../core/mock/mock_api_server.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/utils/json.dart';
@@ -19,8 +18,7 @@ abstract interface class ProjectsDataSource {
   Future<String> removeMember(String projectId, String userId);
 }
 
-@remote
-@LazySingleton(as: ProjectsDataSource)
+@lazySingleton
 class ProjectsDataSourceRemote implements ProjectsDataSource {
   const ProjectsDataSourceRemote(this._dio);
 
@@ -89,8 +87,7 @@ class ProjectsDataSourceRemote implements ProjectsDataSource {
   }
 }
 
-@mock
-@LazySingleton(as: ProjectsDataSource)
+@lazySingleton
 class ProjectsDataSourceMock implements ProjectsDataSource {
   const ProjectsDataSourceMock(this._server);
 
@@ -98,7 +95,7 @@ class ProjectsDataSourceMock implements ProjectsDataSource {
 
   @override
   Future<List<Project>> listProjects({ProjectStatus? status}) async {
-    await _server.latency();
+    await _server.ready();
     return _server
         .listProjects(status: status?.apiValue)
         .map(ProjectModel.fromJson)
@@ -107,13 +104,13 @@ class ProjectsDataSourceMock implements ProjectsDataSource {
 
   @override
   Future<Project> getProject(String projectId) async {
-    await _server.latency();
+    await _server.ready();
     return ProjectModel.fromJson(_server.getProject(projectId));
   }
 
   @override
   Future<Project> createProject(ProjectDraft draft) async {
-    await _server.latency();
+    await _server.ready();
     return ProjectModel.fromJson(
       _server.createProject(ProjectModel.draftToJson(draft)),
     );
@@ -121,7 +118,7 @@ class ProjectsDataSourceMock implements ProjectsDataSource {
 
   @override
   Future<Project> updateProject(String projectId, ProjectDraft draft) async {
-    await _server.latency();
+    await _server.ready();
     return ProjectModel.fromJson(
       _server.updateProject(projectId, ProjectModel.draftToJson(draft)),
     );
@@ -129,7 +126,7 @@ class ProjectsDataSourceMock implements ProjectsDataSource {
 
   @override
   Future<List<ProjectMember>> listMembers(String projectId) async {
-    await _server.latency();
+    await _server.ready();
     return _server
         .listMembers(projectId)
         .map(ProjectMemberModel.fromJson)
@@ -142,14 +139,14 @@ class ProjectsDataSourceMock implements ProjectsDataSource {
     String email,
     ProjectRole role,
   ) async {
-    await _server.latency();
+    await _server.ready();
     return _server.inviteMember(projectId, email, role.apiValue)['message']
         as String;
   }
 
   @override
   Future<String> removeMember(String projectId, String userId) async {
-    await _server.latency();
+    await _server.ready();
     return _server.removeMember(projectId, userId)['message'] as String;
   }
 }

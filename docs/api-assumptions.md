@@ -1,5 +1,18 @@
 # API assumptions made by the app
 
+## Live status (https://apex.pntr.dev/docs, checked 2026-10-19)
+
+| Feature | Endpoints | App |
+|---|---|---|
+| Auth | `POST /auth/firebase` | **Live** |
+| Profile | `GET` / `PATCH /users/me` | **Live**, but no `user_role` yet (kept on the phone) |
+| Projects & members | `/projects`, `/projects/{id}/members` | Mock until shipped (`LIVE_PROJECTS`) |
+| Milestones | `/projects/{id}/milestones`, `/milestones/{id}` | Mock until shipped (`LIVE_MILESTONES`) |
+| Evidence & reviews | `/milestones/{id}/evidence`, `/evidence/{id}/reviews` | Mock until shipped (`LIVE_EVIDENCE`) |
+| Notifications & push token | `/notifications`, `/devices/push-token` | Mock until shipped (`LIVE_NOTIFICATIONS`) |
+
+Live response details: `user_id` is a UUID, and `contact_email` may be `null`.
+
 The [API contract](../../docs/Apex_API_Operations.pdf) names enums and list responses but doesn't spell out every value. The app currently assumes the values below. The mock server (`lib/core/mock/mock_api_server.dart`) implements exactly these, so the screens work end to end.
 
 **Backend team: please confirm or correct these.** If yours differ, only the JSON model mappings in `lib/features/*/data/models/` need to change.

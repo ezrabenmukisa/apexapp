@@ -1,10 +1,10 @@
-# Apex (Siteproof) — Flutter app
+# Apex — Flutter app
 
 Evidence and accountability app for remotely funded physical projects. Owners plan projects and review evidence; site managers submit geotagged evidence from site.
 
 Specs live outside this repo in `../docs/`:
 - `Apex_API_Operations.pdf`: ER diagram and REST contract (`/api/v1`, FastAPI, Firebase ID token auth).
-- `Mobile app design clarification/siteproof/*.html`: prototype screens (390×844) plus `01 Foundations` / `02 Components` design system.
+- `Mobile app design clarification/siteproof/*.html`: prototype screens (390×844) plus `01 Foundations` / `02 Components` design system. "Siteproof" was the prototype's working name; the product is Apex.
 
 ## Architecture
 
@@ -44,21 +44,24 @@ Import `package:material_ui/material_ui.dart` (and `cupertino_ui`), never `packa
 
 Use `appLogger` (`core/logging/app_logger.dart`); never `print`. It is silent outside debug builds. In debug, `AppBlocObserver`, `LoggingInterceptor` (Dio, token never printed), `mapErrorToFailure` and the global error hooks in `main.dart` log automatically.
 
-## Mock vs real backend
+## Configuration (`.env`) and live vs mock backend
 
-Every backend data source has an interface plus two implementations:
-- `XxxRemote` annotated `@remote` (Dio).
-- `XxxMock` annotated `@mock`, backed by `MockApiServer` (`core/mock/`). It is an in-app fake backend that stores API-shaped JSON per user in shared prefs, enforces owner-only writes and seeds the prototype's sample project for the user's role.
+Configuration lives in a gitignored `.env` (loaded with `flutter_dotenv` in `AppConfig.load()`); nothing environment-specific is hard-coded. First-time setup: `cp .env.example .env`. A missing or invalid `.env` stops the app at launch with an explanation.
 
-Assumed enum values and response shapes are listed in `docs/api-assumptions.md`.
+| Key | Meaning |
+|---|---|
+| `API_BASE_URL` | Apex API including `/api/v1` (dev: `https://apex.pntr.dev/api/v1`; laptop backend from the Android emulator: `http://10.0.2.2:8000/api/v1`) |
+| `LIVE_PROJECTS`, `LIVE_MILESTONES`, `LIVE_EVIDENCE`, `LIVE_NOTIFICATIONS` | `true` = that feature calls the real API; `false` = in-app mock server |
 
-`--dart-define=USE_MOCK_API=false` switches every feature to the real API (default: mocks). Firebase Auth is always real. When an endpoint goes live, only the `@remote` class changes.
+**Auth and profile are always live** (`POST /auth/firebase`, `GET`/`PATCH /users/me`); they have no mock.
 
-```sh
-flutter run                                        # mocks
-flutter run --dart-define=USE_MOCK_API=false \
-  --dart-define=API_BASE_URL=https://<host>/api/v1  # real API
-```
+The other features each have an interface with a `XxxRemote` (Dio, written against the contract) and a `XxxMock` backed by `MockApiServer` (`core/mock/`). The mock is an in-app fake backend that stores API-shaped JSON per user, enforces owner-only writes, and seeds the prototype's sample project using the real user's id, name and role. `core/di/data_source_module.dart` picks one or the other from the `LIVE_*` flag. **When an endpoint ships, set its flag to `true` in `.env`**, then check the remote mapping against the backend's OpenAPI at `https://apex.pntr.dev/docs`.
+
+`user_role` isn't in the live API yet. The role chosen on Complete Profile is kept per Firebase uid in `RoleLocalDataSource`, which survives sign-out; on a new phone the user is asked once with the profile prefilled.
+
+Tests don't need `.env`: `test/flutter_test_config.dart` loads test values, and `test/app/app_harness.dart` serves `/auth/firebase` and `/users/me` from `FakeApexBackend`.
+
+Live status and assumed enum values: `docs/api-assumptions.md`.
 
 ## Auth flow (issue #1)
 

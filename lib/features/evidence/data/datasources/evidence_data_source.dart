@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 
-import '../../../../core/di/injection.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/mock/mock_api_server.dart';
 import '../../../../core/network/api_endpoints.dart';
@@ -23,8 +22,7 @@ abstract interface class EvidenceDataSource {
   );
 }
 
-@remote
-@LazySingleton(as: EvidenceDataSource)
+@lazySingleton
 class EvidenceDataSourceRemote implements EvidenceDataSource {
   const EvidenceDataSourceRemote(this._dio);
 
@@ -89,8 +87,7 @@ class EvidenceDataSourceRemote implements EvidenceDataSource {
   }
 }
 
-@mock
-@LazySingleton(as: EvidenceDataSource)
+@lazySingleton
 class EvidenceDataSourceMock implements EvidenceDataSource {
   const EvidenceDataSourceMock(this._server);
 
@@ -98,7 +95,7 @@ class EvidenceDataSourceMock implements EvidenceDataSource {
 
   @override
   Future<Evidence?> getEvidence(String milestoneId) async {
-    await _server.latency();
+    await _server.ready();
     try {
       return EvidenceModel.fromJson(_server.getEvidence(milestoneId));
     } on ServerException catch (e) {
@@ -134,7 +131,7 @@ class EvidenceDataSourceMock implements EvidenceDataSource {
     ReviewDecision decision,
     String comment,
   ) async {
-    await _server.latency();
+    await _server.ready();
     return _server.reviewEvidence(
           evidenceId,
           decision.apiValue,

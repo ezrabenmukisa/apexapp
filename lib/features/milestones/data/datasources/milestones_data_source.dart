@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 
-import '../../../../core/di/injection.dart';
 import '../../../../core/mock/mock_api_server.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/utils/json.dart';
@@ -16,8 +15,7 @@ abstract interface class MilestonesDataSource {
   Future<Milestone> updateMilestone(String milestoneId, MilestoneDraft draft);
 }
 
-@remote
-@LazySingleton(as: MilestonesDataSource)
+@lazySingleton
 class MilestonesDataSourceRemote implements MilestonesDataSource {
   const MilestonesDataSourceRemote(this._dio);
 
@@ -64,8 +62,7 @@ class MilestonesDataSourceRemote implements MilestonesDataSource {
   }
 }
 
-@mock
-@LazySingleton(as: MilestonesDataSource)
+@lazySingleton
 class MilestonesDataSourceMock implements MilestonesDataSource {
   const MilestonesDataSourceMock(this._server);
 
@@ -73,7 +70,7 @@ class MilestonesDataSourceMock implements MilestonesDataSource {
 
   @override
   Future<List<Milestone>> listMilestones(String projectId) async {
-    await _server.latency();
+    await _server.ready();
     return _server
         .listMilestones(projectId)
         .map(MilestoneModel.fromJson)
@@ -82,7 +79,7 @@ class MilestonesDataSourceMock implements MilestonesDataSource {
 
   @override
   Future<Milestone> getMilestone(String milestoneId) async {
-    await _server.latency();
+    await _server.ready();
     return MilestoneModel.fromJson(_server.getMilestone(milestoneId));
   }
 
@@ -91,7 +88,7 @@ class MilestonesDataSourceMock implements MilestonesDataSource {
     String projectId,
     MilestoneDraft draft,
   ) async {
-    await _server.latency();
+    await _server.ready();
     return MilestoneModel.fromJson(
       _server.createMilestone(projectId, MilestoneModel.draftToJson(draft)),
     );
@@ -102,7 +99,7 @@ class MilestonesDataSourceMock implements MilestonesDataSource {
     String milestoneId,
     MilestoneDraft draft,
   ) async {
-    await _server.latency();
+    await _server.ready();
     return MilestoneModel.fromJson(
       _server.updateMilestone(milestoneId, MilestoneModel.draftToJson(draft)),
     );
