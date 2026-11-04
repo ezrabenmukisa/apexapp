@@ -23,6 +23,7 @@ import '../../features/evidence/presentation/pages/submit_evidence_page.dart';
 import '../../features/milestones/presentation/pages/edit_milestone_page.dart';
 import '../../features/milestones/presentation/pages/milestone_plan_page.dart';
 import '../../features/notifications/presentation/pages/inbox_page.dart';
+import '../../features/projects/presentation/pages/accept_invite_page.dart';
 import '../../features/projects/presentation/pages/add_site_manager_page.dart';
 import '../../features/projects/presentation/pages/project_detail_page.dart';
 import '../../features/projects/presentation/pages/project_form_page.dart';
@@ -31,15 +32,29 @@ import '../../features/projects/presentation/pages/projects_page.dart';
 import '../navigation/main_shell.dart';
 import 'app_routes.dart';
 import 'auth_redirect.dart';
+import 'pending_invite.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
-GoRouter createAppRouter(AuthBloc authBloc) => GoRouter(
+GoRouter createAppRouter(AuthBloc authBloc, PendingInvite pendingInvite) =>
+    GoRouter(
   navigatorKey: _rootKey,
   initialLocation: AppRoutes.splash,
   refreshListenable: _StreamListenable(authBloc.stream),
-  redirect: (context, routerState) =>
-      authRedirect(authBloc.state, routerState.matchedLocation),
+  redirect: (context, routerState) {
+    // Hold an invite link's token so it survives signing in first. Once
+    // signed in, the invite page takes the token straight from the URL.
+    if (routerState.matchedLocation == AppRoutes.invite &&
+        authBloc.state.status != AuthStatus.authenticated) {
+      final token = routerState.uri.queryParameters['token'];
+      if (token != null && token.isNotEmpty) pendingInvite.token = token;
+    }
+    return authRedirect(
+      authBloc.state,
+      routerState.matchedLocation,
+      pendingInvite: pendingInvite.token,
+    );
+  },
   routes: [
     GoRoute(path: AppRoutes.splash, builder: (_, _) => const SplashPage()),
     GoRoute(path: AppRoutes.welcome, builder: (_, _) => const WelcomePage()),
@@ -62,6 +77,12 @@ GoRouter createAppRouter(AuthBloc authBloc) => GoRouter(
     GoRoute(
       path: AppRoutes.editProfile,
       builder: (_, _) => const EditProfilePage(),
+    ),
+    GoRoute(
+      path: AppRoutes.invite,
+      builder: (_, state) => AcceptInvitePage(
+        token: state.uri.queryParameters['token'] ?? '',
+      ),
     ),
     ..._ownerRoutes,
     ..._siteRoutes,

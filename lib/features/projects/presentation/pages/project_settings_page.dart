@@ -55,7 +55,7 @@ class ProjectSettingsPage extends StatelessWidget {
         child: LoadView<ProjectOverviewCubit, ProjectOverview>(
           builder: (context, o, state) {
             final cubit = context.read<ProjectOverviewCubit>();
-            final paused = o.project.status == ProjectStatus.paused;
+            final paused = o.project.status == ProjectStatus.suspended;
             return ListView(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
               children: [
@@ -200,7 +200,7 @@ class ProjectSettingsPage extends StatelessWidget {
                                   await cubit.setStatus(
                                     paused
                                         ? ProjectStatus.active
-                                        : ProjectStatus.paused,
+                                        : ProjectStatus.suspended,
                                   );
                                 }
                               },

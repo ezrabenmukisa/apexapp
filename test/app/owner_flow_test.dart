@@ -103,7 +103,10 @@ void main() {
       'john.okello@example.com',
     );
     await AppHarness.tap(tester, find.text('Add to project'));
-    expect(find.text('John Okello'), findsOneWidget);
+    // Like the API, they're invited, not a member until they accept.
+    expect(find.text('john.okello@example.com'), findsOneWidget);
+    expect(find.text('Invited'), findsWidgets);
+    expect(find.text('John Okello'), findsNothing);
 
     await AppHarness.tap(tester, find.text('Finish setup'));
     expect(find.text('Rental units'), findsWidgets);

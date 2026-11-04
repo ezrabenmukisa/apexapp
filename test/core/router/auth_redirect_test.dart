@@ -50,6 +50,57 @@ void main() {
       expect(authRedirect(owner, AppRoutes.ownerProjects), isNull);
     });
 
+    group('invite link', () {
+      const token = 'tok-123';
+      final inviteUrl = AppRoutes.inviteFor(token);
+
+      test('a signed-out user is sent to sign in first', () {
+        expect(
+          authRedirect(signedOut, AppRoutes.invite, pendingInvite: token),
+          AppRoutes.welcome,
+        );
+      });
+
+      test('a signed-in user stays on the invite screen', () {
+        for (final user in [owner, manager]) {
+          expect(
+            authRedirect(user, AppRoutes.invite, pendingInvite: token),
+            isNull,
+          );
+        }
+      });
+
+      test('after signing in, the pending invite opens', () {
+        expect(
+          authRedirect(owner, AppRoutes.signIn, pendingInvite: token),
+          inviteUrl,
+        );
+        expect(
+          authRedirect(manager, AppRoutes.splash, pendingInvite: token),
+          inviteUrl,
+        );
+      });
+
+      test('a new user completes their profile before accepting', () {
+        expect(
+          authRedirect(needsProfile, AppRoutes.invite, pendingInvite: token),
+          AppRoutes.completeProfile,
+        );
+        expect(
+          authRedirect(
+            owner,
+            AppRoutes.completeProfile,
+            pendingInvite: token,
+          ),
+          inviteUrl,
+        );
+      });
+
+      test('without a pending invite, sign-in lands on home as usual', () {
+        expect(authRedirect(owner, AppRoutes.signIn), AppRoutes.ownerProjects);
+      });
+    });
+
     test('users cannot open the other role\'s shell', () {
       expect(authRedirect(owner, AppRoutes.siteToday), AppRoutes.ownerProjects);
       expect(

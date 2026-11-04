@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'core/di/injection.dart';
 import 'core/navigation/session_scope.dart';
 import 'core/router/app_router.dart';
+import 'core/router/pending_invite.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 
@@ -23,7 +24,7 @@ class _ApexAppState extends State<ApexApp> {
   void initState() {
     super.initState();
     _authBloc = getIt<AuthBloc>()..add(const AuthSubscriptionRequested());
-    _router = createAppRouter(_authBloc);
+    _router = createAppRouter(_authBloc, getIt<PendingInvite>());
   }
 
   @override

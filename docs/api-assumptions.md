@@ -1,12 +1,12 @@
 # API assumptions made by the app
 
-## Live status (https://apex.pntr.dev/docs, checked 2026-10-19)
+## Live status (https://apex.pntr.dev/docs, checked 2026-11-05)
 
 | Feature | Endpoints | App |
 |---|---|---|
 | Auth | `POST /auth/firebase` | **Live** |
 | Profile | `GET` / `PATCH /users/me` | **Live**, but no `user_role` yet (kept on the phone) |
-| Projects & members | `/projects`, `/projects/{id}/members` | Mock until shipped (`LIVE_PROJECTS`) |
+| Projects, members & invitations | `/projects`, `/projects/{id}/members`, `POST /projects/invitations/accept` | **Live** (`LIVE_PROJECTS=true`); mapped from the OpenAPI schemas |
 | Milestones | `/projects/{id}/milestones`, `/milestones/{id}` | Mock until shipped (`LIVE_MILESTONES`) |
 | Evidence & reviews | `/milestones/{id}/evidence`, `/evidence/{id}/reviews` | Mock until shipped (`LIVE_EVIDENCE`) |
 | Notifications & push token | `/notifications`, `/devices/push-token` | Mock until shipped (`LIVE_NOTIFICATIONS`) |
@@ -21,8 +21,8 @@ The [API contract](../../docs/Apex_API_Operations.pdf) names enums and list resp
 
 | Field | Values the app sends / expects |
 |---|---|
-| `projects.status` | `ACTIVE`, `PAUSED`, `COMPLETED` |
-| `user_role` (member), `current_user_role` | `OWNER`, `PROJECT_MANAGER` (also accepts `MANAGER`) |
+| `projects.status` | `ACTIVE`, `SUSPENDED`, `COMPLETED` (**live**; the UI says "Paused") |
+| `user_role` (member, invitation), `current_user_role` | `owner`, `manager`, `member` (**live**, lowercase; unknown values are treated as `member`) |
 | `users.user_role` (requested addition) | `OWNER`, `MANAGER` |
 | `milestones.status` | `NOT_STARTED`, `IN_PROGRESS`, `SUBMITTED`, `CHANGES_REQUESTED`, `APPROVED`, `FLAGGED` |
 | `evidence.status` | `SUBMITTED`, `APPROVED`, `CHANGES_REQUESTED`, `FLAGGED` |
@@ -41,7 +41,8 @@ Unknown values don't crash the app; they fall back to a safe default (e.g. `NOT_
 ## Response shapes
 
 - **List endpoints** (`/projects`, `/projects/{id}/milestones`, `/projects/{id}/members`, `/notifications`): either a bare JSON array or `{"items": [...]}`. Both are accepted.
-- **Members** (`GET /projects/{id}/members`): each item has `user_id`, `first_name`, `last_name`, `contact_email`, `user_role`.
+- **Members** (`GET /projects/{id}/members`): each item has `user_id`, `first_name`, `last_name`, `contact_email`, `user_role`. **Live.**
+- **Invitations** (live): `POST /projects/{id}/members` takes `{contact_email, user_role, message}` (`message` is required; the app sends the owner's note or a default line) and returns a pending `ProjectInvitationResponse`. The person isn't in the members list until they accept. Accepting is `POST /projects/invitations/accept {token}` → `{message, project_id}`; the token comes from the emailed `https://apex.pntr.dev/invite?token=…` link.
 - **Notifications:** each item has `notification_id`, `title`, `body`, `is_read`, and ideally `created_at` (ISO datetime), which the app uses for newest-first ordering.
 - **Dates:** `date` fields are `YYYY-MM-DD`. `datetime` fields are ISO 8601 with a timezone (e.g. `2026-10-14T07:42:00Z`).
 - **Money:** `planned_budget` and `total_cost_spent` are numbers (or numeric strings). `currency` defaults to `UGX`.

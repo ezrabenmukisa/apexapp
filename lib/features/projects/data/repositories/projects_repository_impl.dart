@@ -53,11 +53,31 @@ class ProjectsRepositoryImpl
     String projectId, {
     required String email,
     required ProjectRole role,
+    String? note,
   }) => guard(() async {
-    final message = await _source.inviteMember(projectId, email.trim(), role);
+    final trimmed = note?.trim() ?? '';
+    final message = await _source.inviteMember(
+      projectId,
+      email.trim(),
+      role,
+      message: trimmed.isEmpty ? defaultInviteMessage : trimmed,
+    );
     _changes.publish(DataTopic.members);
     return message;
   });
+
+  /// Sent as the invite's `message` when the owner doesn't write one.
+  static const defaultInviteMessage =
+      "You've been invited to join a project on Apex.";
+
+  @override
+  Future<Either<Failure, String>> acceptInvitation(String token) =>
+      guard(() async {
+        final projectId = await _source.acceptInvitation(token);
+        _changes.publish(DataTopic.projects);
+        _changes.publish(DataTopic.members);
+        return projectId;
+      });
 
   @override
   Future<Either<Failure, String>> removeMember(

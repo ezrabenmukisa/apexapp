@@ -6,7 +6,14 @@ import 'app_routes.dart';
 ///
 /// Implements the onboarding guard: a signed-in user whose profile is
 /// incomplete can only see Complete Profile.
-String? authRedirect(AuthState state, String location) {
+///
+/// [pendingInvite] is the token of an invite link opened before the user
+/// finished signing in; once they're in, it reopens [AppRoutes.invite].
+String? authRedirect(
+  AuthState state,
+  String location, {
+  String? pendingInvite,
+}) {
   switch (state.status) {
     case AuthStatus.unknown:
       return location == AppRoutes.splash ? null : AppRoutes.splash;
@@ -31,6 +38,9 @@ String? authRedirect(AuthState state, String location) {
           location == AppRoutes.ownerRoot ||
           location == AppRoutes.siteRoot ||
           AppRoutes.signedOut.contains(location);
+      if (onAuthFlow && pendingInvite != null) {
+        return AppRoutes.inviteFor(pendingInvite);
+      }
       if (onAuthFlow || location.startsWith(otherRoot)) return home;
       return null;
   }

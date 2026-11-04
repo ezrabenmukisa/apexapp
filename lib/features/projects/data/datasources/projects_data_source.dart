@@ -14,8 +14,21 @@ abstract interface class ProjectsDataSource {
   Future<Project> createProject(ProjectDraft draft);
   Future<Project> updateProject(String projectId, ProjectDraft draft);
   Future<List<ProjectMember>> listMembers(String projectId);
-  Future<String> inviteMember(String projectId, String email, ProjectRole role);
+
+  /// Emails an invite link. The person only appears in [listMembers] after
+  /// they accept it. Returns a confirmation for the owner.
+  Future<String> inviteMember(
+    String projectId,
+    String email,
+    ProjectRole role, {
+    required String message,
+  });
+
   Future<String> removeMember(String projectId, String userId);
+
+  /// Accepts the invite behind an emailed link's `token` for the signed-in
+  /// user. Returns the id of the project they joined.
+  Future<String> acceptInvitation(String token);
 }
 
 @lazySingleton
@@ -69,13 +82,18 @@ class ProjectsDataSourceRemote implements ProjectsDataSource {
   Future<String> inviteMember(
     String projectId,
     String email,
-    ProjectRole role,
-  ) async {
+    ProjectRole role, {
+    required String message,
+  }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.projectMembers(projectId),
-      data: {'contact_email': email, 'user_role': role.apiValue},
+      data: {
+        'contact_email': email,
+        'user_role': role.apiValue,
+        'message': message,
+      },
     );
-    return res.data?['message'] as String? ?? 'Invitation sent';
+    return 'Invitation sent to ${res.data?['email'] as String? ?? email}';
   }
 
   @override
@@ -84,6 +102,15 @@ class ProjectsDataSourceRemote implements ProjectsDataSource {
       ApiEndpoints.projectMember(projectId, userId),
     );
     return res.data?['message'] as String? ?? 'Member removed';
+  }
+
+  @override
+  Future<String> acceptInvitation(String token) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      ApiEndpoints.acceptInvitation,
+      data: {'token': token},
+    );
+    return res.data!['project_id'] as String;
   }
 }
 
@@ -137,16 +164,23 @@ class ProjectsDataSourceMock implements ProjectsDataSource {
   Future<String> inviteMember(
     String projectId,
     String email,
-    ProjectRole role,
-  ) async {
+    ProjectRole role, {
+    required String message,
+  }) async {
     await _server.ready();
-    return _server.inviteMember(projectId, email, role.apiValue)['message']
-        as String;
+    final invitation = _server.inviteMember(projectId, email, role.apiValue);
+    return 'Invitation sent to ${invitation['email']}';
   }
 
   @override
   Future<String> removeMember(String projectId, String userId) async {
     await _server.ready();
     return _server.removeMember(projectId, userId)['message'] as String;
+  }
+
+  @override
+  Future<String> acceptInvitation(String token) async {
+    await _server.ready();
+    return _server.acceptInvitation(token)['project_id'] as String;
   }
 }

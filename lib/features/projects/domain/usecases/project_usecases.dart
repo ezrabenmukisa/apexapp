@@ -111,6 +111,7 @@ typedef InviteMemberParams = ({
   String projectId,
   String email,
   ProjectRole role,
+  String? note,
 });
 
 @injectable
@@ -121,7 +122,24 @@ class InviteMember implements UseCase<String, InviteMemberParams> {
 
   @override
   Future<Either<Failure, String>> call(InviteMemberParams p) =>
-      _repository.inviteMember(p.projectId, email: p.email, role: p.role);
+      _repository.inviteMember(
+        p.projectId,
+        email: p.email,
+        role: p.role,
+        note: p.note,
+      );
+}
+
+/// Accepts an emailed invite link's token. Returns the joined project's id.
+@injectable
+class AcceptInvitation implements UseCase<String, String> {
+  const AcceptInvitation(this._repository);
+
+  final ProjectsRepository _repository;
+
+  @override
+  Future<Either<Failure, String>> call(String token) =>
+      _repository.acceptInvitation(token);
 }
 
 typedef RemoveMemberParams = ({String projectId, String userId});
