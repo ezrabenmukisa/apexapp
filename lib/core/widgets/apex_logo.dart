@@ -4,12 +4,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
 /// The surveyor's benchmark mark: a level line over a chiselled arrow.
-class SiteproofMark extends StatelessWidget {
-  const SiteproofMark({
-    super.key,
-    this.size = 30,
-    this.color = AppColors.laterite,
-  });
+class ApexMark extends StatelessWidget {
+  const ApexMark({super.key, this.size = 30, this.color = AppColors.laterite});
 
   final double size;
   final Color color;
@@ -45,17 +41,17 @@ class _MarkPainter extends CustomPainter {
   bool shouldRepaint(_MarkPainter oldDelegate) => oldDelegate.color != color;
 }
 
-/// Mark plus "Siteproof" wordmark.
-class SiteproofLogo extends StatelessWidget {
-  const SiteproofLogo({super.key});
+/// Mark plus "Apex" wordmark.
+class ApexLogo extends StatelessWidget {
+  const ApexLogo({super.key});
 
   @override
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      const SiteproofMark(),
+      const ApexMark(),
       const SizedBox(width: 10),
-      Text('Siteproof', style: AppTextStyles.brand),
+      Text('Apex', style: AppTextStyles.brand),
     ],
   );
 }

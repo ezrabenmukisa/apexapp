@@ -44,7 +44,7 @@ class _SignInOptionsView extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Sign in to Siteproof', style: AppTextStyles.displayL),
+                Text('Sign in to Apex', style: AppTextStyles.displayL),
                 const SizedBox(height: 8),
                 Text(
                   'One sign-in for new and returning users. Use the account '

@@ -48,10 +48,33 @@ void main() {
   test('profileUpdateToJson only sends fields that are set', () {
     expect(
       profileUpdateToJson(
+        const ProfileUpdate(firstName: 'Sarah', contactPhone: '+256700000001'),
+      ),
+      {'first_name': 'Sarah', 'contact_phone': '+256700000001'},
+    );
+  });
+
+  test('profileUpdateToJson never sends user_role (not in the live API)', () {
+    expect(
+      profileUpdateToJson(
         const ProfileUpdate(firstName: 'Sarah', userRole: UserRole.owner),
       ),
-      {'first_name': 'Sarah', 'user_role': 'OWNER'},
+      {'first_name': 'Sarah'},
     );
+  });
+
+  test('parses the live API profile (uuid, null email, no role)', () {
+    final user = AppUserModel.fromJson({
+      'user_id': 'c0ffee00-0000-4000-8000-000000000001',
+      'first_name': 'Kato',
+      'middle_name': null,
+      'last_name': 'Builders',
+      'contact_email': null,
+      'contact_phone': '+256700000001',
+    });
+    expect(user.contactEmail, '');
+    expect(user.middleName, isNull);
+    expect(user.userRole, isNull);
   });
 
   test('AuthSessionModel parses POST /auth/firebase', () {

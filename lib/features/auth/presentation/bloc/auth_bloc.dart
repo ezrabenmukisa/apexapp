@@ -89,8 +89,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       profile.match(
         (failure) => state.toSessionError(identity, failure),
         (user) => user.userRole == null
-            // Profile saved before roles existed: ask for the role again.
-            ? state.toNeedsProfile(identity)
+            // The API has no user_role yet; on a new phone ask for it once,
+            // with the rest of the profile prefilled.
+            ? state.toNeedsProfile(identity, user: user)
             : state.toAuthenticated(identity, user),
       ),
     );

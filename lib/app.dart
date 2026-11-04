@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/di/injection.dart';
+import 'core/navigation/session_scope.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
@@ -35,10 +36,11 @@ class _ApexAppState extends State<ApexApp> {
   Widget build(BuildContext context) => BlocProvider.value(
     value: _authBloc,
     child: MaterialApp.router(
-      title: 'Siteproof',
+      title: 'Apex',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: _router,
+      builder: (context, child) => SessionScope(child: child!),
     ),
   );
 }

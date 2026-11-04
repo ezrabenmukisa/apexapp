@@ -9,6 +9,7 @@ environment:
 dependencies:
   bloc: ^9.2.1
   bloc_concurrency: ^0.3.0
+  connectivity_plus: ^7.3.2
   dio: ^5.11.1
   equatable: ^3.0.0
   firebase_auth: ^7.0.0
@@ -16,6 +17,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
+  flutter_dotenv: ^6.0.1
   flutter_secure_storage: ^11.2.0
   flutter_svg: ^2.3.0
   fpdart: ^1.2.0
@@ -42,6 +44,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - .env
     - assets/icons/
     - assets/fonts/Newsreader/OFL.txt
     - assets/fonts/HankenGrotesk/OFL.txt

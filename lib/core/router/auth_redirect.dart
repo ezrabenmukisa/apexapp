@@ -19,19 +19,22 @@ String? authRedirect(AuthState state, String location) {
           ? null
           : AppRoutes.completeProfile;
     case AuthStatus.authenticated:
-      final home = homeFor(state.user?.userRole);
-      final otherHome = home == AppRoutes.owner
-          ? AppRoutes.site
-          : AppRoutes.owner;
+      final role = state.user?.userRole;
+      final home = homeFor(role);
+      final otherRoot = role == UserRole.manager
+          ? AppRoutes.ownerRoot
+          : AppRoutes.siteRoot;
       final onAuthFlow =
           location == AppRoutes.splash ||
           location == AppRoutes.sessionError ||
           location == AppRoutes.completeProfile ||
+          location == AppRoutes.ownerRoot ||
+          location == AppRoutes.siteRoot ||
           AppRoutes.signedOut.contains(location);
-      if (onAuthFlow || location.startsWith(otherHome)) return home;
+      if (onAuthFlow || location.startsWith(otherRoot)) return home;
       return null;
   }
 }
 
 String homeFor(UserRole? role) =>
-    role == UserRole.manager ? AppRoutes.site : AppRoutes.owner;
+    role == UserRole.manager ? AppRoutes.siteToday : AppRoutes.ownerProjects;

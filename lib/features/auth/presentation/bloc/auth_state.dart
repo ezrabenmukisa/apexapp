@@ -35,11 +35,15 @@ final class AuthState extends Equatable {
   final Failure? failure;
   final UserRole? roleHint;
 
-  AuthState toNeedsProfile(AuthIdentity identity) => AuthState._(
-    status: AuthStatus.needsProfile,
-    identity: identity,
-    roleHint: roleHint,
-  );
+  /// [user] is set when the profile exists but the role is unknown on this
+  /// phone, so Complete Profile can prefill everything but the role.
+  AuthState toNeedsProfile(AuthIdentity identity, {AppUser? user}) =>
+      AuthState._(
+        status: AuthStatus.needsProfile,
+        identity: identity,
+        user: user,
+        roleHint: roleHint,
+      );
 
   AuthState toAuthenticated(AuthIdentity identity, AppUser user) => AuthState._(
     status: AuthStatus.authenticated,

@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/siteproof_mark.dart';
+import '../../../../core/widgets/apex_logo.dart';
 import '../../domain/entities/user_role.dart';
 import '../bloc/auth_bloc.dart';
 import '../widgets/welcome_illustration.dart';
@@ -27,10 +27,7 @@ class WelcomePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: SiteproofLogo(),
-            ),
+            const Align(alignment: Alignment.centerLeft, child: ApexLogo()),
             const SizedBox(height: 28),
             const Expanded(child: WelcomeIllustration()),
             const SizedBox(height: 28),

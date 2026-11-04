@@ -114,6 +114,7 @@ class _PhaseLedger extends StatelessWidget {
       SizedBox(
         height: 12,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
               flex: 250,
