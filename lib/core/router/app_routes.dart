@@ -10,6 +10,12 @@ abstract final class AppRoutes {
   static const sessionError = '/session-error';
   static const editProfile = '/profile/edit';
 
+  /// Emailed invite link: `https://apex.pntr.dev/invite?token=…`. Opened by
+  /// Android App Links / iOS Universal Links, or in-app after signing in.
+  static const invite = '/invite';
+  static String inviteFor(String token) =>
+      '$invite?token=${Uri.encodeQueryComponent(token)}';
+
   /// Routes reachable while signed out.
   static const signedOut = {welcome, signIn, signInPhone, signInEmail};
 

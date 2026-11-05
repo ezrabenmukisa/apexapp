@@ -10,6 +10,7 @@ abstract final class ApiEndpoints {
 
   // 2. Project management
   static const projects = '/projects';
+  static const acceptInvitation = '/projects/invitations/accept';
   static String project(String projectId) => '/projects/$projectId';
 
   // 3. Milestone management

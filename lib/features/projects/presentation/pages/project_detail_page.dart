@@ -66,7 +66,7 @@ class ProjectDetailPage extends StatelessWidget {
                   ),
                 ],
               ),
-              if (o.project.status == ProjectStatus.paused) ...[
+              if (o.project.status == ProjectStatus.suspended) ...[
                 const SizedBox(height: 12),
                 const _PausedBanner(),
               ],

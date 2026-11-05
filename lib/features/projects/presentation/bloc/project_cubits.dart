@@ -57,7 +57,7 @@ class ProjectOverviewCubit extends LoadCubit<ProjectOverview> {
 
   Future<void> setStatus(ProjectStatus status) => runAction(
     () => _update((projectId: projectId!, draft: ProjectDraft(status: status))),
-    successMessage: status == ProjectStatus.paused
+    successMessage: status == ProjectStatus.suspended
         ? 'Project paused. Your site manager has been told to stop work.'
         : 'Project resumed.',
   );
@@ -235,11 +235,13 @@ class TeamCubit extends LoadCubit<List<ProjectMember>> {
   @override
   Future<Either<Failure, List<ProjectMember>>> fetch() => _list(projectId!);
 
-  Future<bool> invite(String email) => runAction(
+  /// Invites a site manager. [note] is the owner's message in the email.
+  Future<bool> invite(String email, {String? note}) => runAction(
     () => _invite((
       projectId: projectId!,
       email: email,
       role: ProjectRole.projectManager,
+      note: note,
     )),
   );
 }

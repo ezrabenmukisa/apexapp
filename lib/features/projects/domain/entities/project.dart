@@ -1,8 +1,9 @@
 import 'package:equatable/equatable.dart';
 
+/// `ProjectStatus` in the API. The UI calls [suspended] "Paused".
 enum ProjectStatus {
   active('ACTIVE'),
-  paused('PAUSED'),
+  suspended('SUSPENDED'),
   completed('COMPLETED');
 
   const ProjectStatus(this.apiValue);
@@ -14,20 +15,31 @@ enum ProjectStatus {
 }
 
 /// The caller's role on one project (`current_user_role`, member `user_role`).
+/// API `UserRole`: `owner`, `manager`, `member`.
 enum ProjectRole {
-  owner('OWNER'),
-  projectManager('PROJECT_MANAGER');
+  owner('owner'),
+
+  /// Site manager: submits evidence from site.
+  projectManager('manager'),
+
+  /// Read-only participant.
+  member('member');
 
   const ProjectRole(this.apiValue);
 
   final String apiValue;
 
-  String get label => this == owner ? 'Owner' : 'Site manager';
-
-  static ProjectRole fromApi(Object? value) => switch (value) {
-    'OWNER' => owner,
-    _ => projectManager, // PROJECT_MANAGER / MANAGER
+  String get label => switch (this) {
+    owner => 'Owner',
+    projectManager => 'Site manager',
+    member => 'Member',
   };
+
+  /// Unknown values get the least access ([member]).
+  static ProjectRole fromApi(Object? value) => values.firstWhere(
+    (r) => r.apiValue == value.toString().toLowerCase(),
+    orElse: () => member,
+  );
 }
 
 /// A physical project (`/projects`).

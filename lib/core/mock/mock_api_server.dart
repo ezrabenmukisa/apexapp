@@ -46,6 +46,7 @@ class MockApiServer {
     'milestones',
     'evidence',
     'notifications',
+    'invitations',
   ];
 
   // ---------------------------------------------------------------- infra
@@ -99,7 +100,7 @@ class MockApiServer {
     _save();
   }
 
-  String _key(String uid) => 'mock_api.db.v1.$uid';
+  String _key(String uid) => 'mock_api.db.v2.$uid';
 
   void _save() => _prefs.setString(_key(_uid), jsonEncode(_db));
 
@@ -132,7 +133,7 @@ class MockApiServer {
 
   void _requireOwner(String projectId) {
     _requireMember(projectId);
-    if (_roleOn(projectId) != 'OWNER') _forbidden();
+    if (_roleOn(projectId) != 'owner') _forbidden();
   }
 
   JsonMap _projectRow(String id) => _table('projects').firstWhere(
@@ -195,7 +196,7 @@ class MockApiServer {
         _me,
         _myNameParts,
         _profile?['contact_email'] as String? ?? '',
-        'OWNER',
+        'owner',
       ),
     );
     _save();
@@ -239,10 +240,12 @@ class MockApiServer {
     ];
   }
 
+  /// Like the API: creates a pending invitation (a `ProjectInvitationResponse`)
+  /// and doesn't add a member until it's accepted. The mock's token is the
+  /// invitation id.
   JsonMap inviteMember(String projectId, String email, String role) {
     _requireOwner(projectId);
-    final members = _table('members');
-    if (members.any(
+    if (_table('members').any(
       (m) => m['project_id'] == projectId && m['contact_email'] == email,
     )) {
       throw const ServerException(
@@ -250,22 +253,52 @@ class MockApiServer {
         statusCode: 409,
       );
     }
-    final local = email.split('@').first.replaceAll(RegExp(r'[._-]+'), ' ');
-    final words = [
-      for (final w in local.split(' '))
-        if (w.isNotEmpty) '${w[0].toUpperCase()}${w.substring(1)}',
-    ];
-    members.add(
-      _member(
-        projectId,
-        _id('usr'),
-        (words.isEmpty ? email : words.first, words.skip(1).join(' ')),
-        email,
-        role,
+    final invitation = {
+      'invitation_id': _id('inv'),
+      'project_id': projectId,
+      'email': email,
+      'user_role': role,
+      'status': 'pending',
+      'expires_at': DateTime.now()
+          .add(const Duration(days: 7))
+          .toUtc()
+          .toIso8601String(),
+    };
+    _table('invitations').add(invitation);
+    _save();
+    return _copy(invitation);
+  }
+
+  /// `POST /projects/invitations/accept` for the signed-in user.
+  JsonMap acceptInvitation(String token) {
+    final invitation = _table('invitations').firstWhere(
+      (i) => i['invitation_id'] == token,
+      orElse: () => throw const ServerException(
+        'Invitation not found',
+        statusCode: 404,
       ),
     );
+    if (invitation['status'] != 'pending') {
+      throw const ServerException(
+        'This invitation has already been used.',
+        statusCode: 400,
+      );
+    }
+    final projectId = invitation['project_id'] as String;
+    if (_roleOn(projectId) == null) {
+      _table('members').add(
+        _member(
+          projectId,
+          _me,
+          _myNameParts,
+          _profile?['contact_email'] as String? ?? '',
+          invitation['user_role'] as String,
+        ),
+      );
+    }
+    invitation['status'] = 'accepted';
     _save();
-    return {'message': 'Invitation sent to $email'};
+    return {'message': 'Invitation accepted', 'project_id': projectId};
   }
 
   JsonMap removeMember(String projectId, String userId) {
@@ -377,7 +410,7 @@ class MockApiServer {
   }) {
     final milestone = _milestoneRow(milestoneId);
     final projectId = milestone['project_id'] as String;
-    if (_roleOn(projectId) != 'PROJECT_MANAGER') {
+    if (_roleOn(projectId) != 'manager') {
       throw const ServerException(
         'Only the site manager can submit evidence.',
         statusCode: 403,
@@ -459,7 +492,7 @@ class MockApiServer {
 
   String _ownerName(String projectId) {
     final owner = _table('members').firstWhere(
-      (m) => m['project_id'] == projectId && m['user_role'] == 'OWNER',
+      (m) => m['project_id'] == projectId && m['user_role'] == 'owner',
       orElse: () => {'first_name': 'The owner'},
     );
     return owner['first_name'] as String;
@@ -512,7 +545,7 @@ class MockApiServer {
   /// left" stays true whenever the app is first opened.
   void _seed() {
     final role = _profile?['user_role'] as String?;
-    final isManager = role == 'MANAGER' || role == 'PROJECT_MANAGER';
+    final isManager = role == 'MANAGER';
     final now = DateTime.now();
     DateTime day(int offset) => DateTime(now.year, now.month, now.day + offset);
     String date(int offset) => Json.date(day(offset))!;
@@ -550,20 +583,20 @@ class MockApiServer {
             'usr_sarah',
             ('Sarah', 'Namuli'),
             'sarah@example.com',
-            'OWNER',
+            'owner',
           ),
         )
-        ..add(_member(pid, _me, _myNameParts, email, 'PROJECT_MANAGER'));
+        ..add(_member(pid, _me, _myNameParts, email, 'manager'));
     } else {
       members
-        ..add(_member(pid, _me, _myNameParts, email, 'OWNER'))
+        ..add(_member(pid, _me, _myNameParts, email, 'owner'))
         ..add(
           _member(
             pid,
             'usr_kato',
             ('Kato', 'Builders'),
             'kato@example.com',
-            'PROJECT_MANAGER',
+            'manager',
           ),
         );
     }

@@ -51,18 +51,31 @@ class _AddSiteManagerView extends StatefulWidget {
 class _AddSiteManagerViewState extends State<_AddSiteManagerView> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
+  final _note = TextEditingController();
+
+  /// Invites sent from this screen. The API lists people only once they've
+  /// accepted, so these are shown separately as pending.
+  final _invited = <String>[];
 
   @override
   void dispose() {
     _email.dispose();
+    _note.dispose();
     super.dispose();
   }
 
   Future<void> _invite() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-    if (await context.read<TeamCubit>().invite(_email.text.trim())) {
+    final email = _email.text.trim();
+    final sent = await context.read<TeamCubit>().invite(
+      email,
+      note: _note.text,
+    );
+    if (sent && mounted) {
+      setState(() => _invited.add(email));
       _email.clear();
+      _note.clear();
     }
   }
 
@@ -85,13 +98,24 @@ class _AddSiteManagerViewState extends State<_AddSiteManagerView> {
       ),
       LabeledField(
         label: 'Their email',
-        helper: 'They sign in to Apex with this email to see the project.',
+        helper:
+            'We email them an invite link. They sign in to Apex with this '
+            'email to accept it.',
         child: TextFormField(
           controller: _email,
           keyboardType: TextInputType.emailAddress,
           autofillHints: const [AutofillHints.email],
           validator: Validators.email,
-          onFieldSubmitted: (_) => _invite(),
+        ),
+      ),
+      LabeledField(
+        label: 'Note (optional)',
+        helper: 'Added to the invite email.',
+        child: TextFormField(
+          controller: _note,
+          minLines: 1,
+          maxLines: 3,
+          textCapitalization: TextCapitalization.sentences,
         ),
       ),
       AppCard(
@@ -129,6 +153,28 @@ class _AddSiteManagerViewState extends State<_AddSiteManagerView> {
               )
             : const Text('Add to project'),
       ),
+      if (_invited.isNotEmpty)
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SectionLabel('Invited'),
+            AppCardList(
+              children: [
+                for (final email in _invited)
+                  ListRow(
+                    leading: const InitialsAvatar('@', size: 32),
+                    title: email,
+                    subtitle: 'Waiting for them to accept',
+                    chevron: false,
+                    trailing: const StatusChip(
+                      label: 'Invited',
+                      tone: StatusTone.awaiting,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

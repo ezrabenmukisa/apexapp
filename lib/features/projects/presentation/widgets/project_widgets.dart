@@ -64,7 +64,7 @@ class ProjectCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (p.status == ProjectStatus.paused)
+              if (p.status == ProjectStatus.suspended)
                 const StatusChip(label: 'Paused', tone: StatusTone.changes)
               else if (total > 0)
                 StatusChip(

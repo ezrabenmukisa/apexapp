@@ -73,6 +73,10 @@ Sign-in options screen: **Continue with Google** (google_sign_in → Firebase cr
 
 `user_role` is on the User entity in the ER diagram but is not yet in the `/users/me` contract. The app sends it and tolerates its absence, keeping the locally chosen role.
 
+## Invite links (issue #2)
+
+An owner's invite emails `https://apex.pntr.dev/invite?token=…`. Android opens it in the app through an App Links intent filter (`AndroidManifest.xml`, verified by the backend's `/.well-known/assetlinks.json`); go_router routes it to `AppRoutes.invite` → `AcceptInvitePage`, which calls `POST /projects/invitations/accept` and opens the project. If the user isn't signed in yet, the router keeps the token in `PendingInvite` and returns to the invite once they are (`authRedirect(pendingInvite:)`). iOS Universal Links aren't set up yet: they need the Associated Domains capability on the signing team and `apple-app-site-association` on the backend.
+
 ## Design system
 
 Use the tokens in `core/theme/`. Never hard-code colours or fonts in features.

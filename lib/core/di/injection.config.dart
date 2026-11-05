@@ -15,6 +15,7 @@ import 'package:app/core/device/device_services.dart' as _i62;
 import 'package:app/core/di/data_source_module.dart' as _i1066;
 import 'package:app/core/di/register_module.dart' as _i313;
 import 'package:app/core/mock/mock_api_server.dart' as _i664;
+import 'package:app/core/router/pending_invite.dart' as _i35;
 import 'package:app/core/sync/data_changes.dart' as _i833;
 import 'package:app/features/account/data/repositories/settings_repository_impl.dart'
     as _i748;
@@ -94,6 +95,8 @@ import 'package:app/features/projects/domain/repositories/projects_repository.da
     as _i665;
 import 'package:app/features/projects/domain/usecases/project_usecases.dart'
     as _i314;
+import 'package:app/features/projects/presentation/bloc/accept_invite_cubit.dart'
+    as _i192;
 import 'package:app/features/projects/presentation/bloc/project_cubits.dart'
     as _i870;
 import 'package:dio/dio.dart' as _i361;
@@ -125,6 +128,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i558.FlutterSecureStorage>(
       () => registerModule.secureStorage,
     );
+    gh.lazySingleton<_i35.PendingInvite>(() => _i35.PendingInvite());
     gh.lazySingleton<_i833.DataChanges>(
       () => _i833.DataChanges(),
       dispose: (i) => i.dispose(),
@@ -344,6 +348,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i314.InviteMember>(
       () => _i314.InviteMember(gh<_i665.ProjectsRepository>()),
     );
+    gh.factory<_i314.AcceptInvitation>(
+      () => _i314.AcceptInvitation(gh<_i665.ProjectsRepository>()),
+    );
     gh.factory<_i314.RemoveMember>(
       () => _i314.RemoveMember(gh<_i665.ProjectsRepository>()),
     );
@@ -396,6 +403,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i665.ProjectsRepository>(),
         gh<_i537.MilestonesRepository>(),
       ),
+    );
+    gh.factory<_i192.AcceptInviteCubit>(
+      () => _i192.AcceptInviteCubit(gh<_i314.AcceptInvitation>()),
     );
     gh.factory<_i31.EnqueueEvidence>(
       () => _i31.EnqueueEvidence(gh<_i849.OutboxRepository>()),
