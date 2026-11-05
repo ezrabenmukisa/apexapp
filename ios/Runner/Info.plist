@@ -66,5 +66,13 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Apex uses the camera to take site photos and videos as evidence of progress.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Apex records sound with site walk-through videos.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Apex records where each site photo is taken so the owner can trust it came from the site.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Apex lets you attach photos of receipts and invoices.</string>
 </dict>
 </plist>

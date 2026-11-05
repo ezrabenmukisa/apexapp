@@ -28,13 +28,11 @@ void main() {
 
     // 08 Capture: two photos and a video.
     await AppHarness.tap(tester, find.text('Capture evidence'));
-    expect(find.text('[live camera]'), findsOneWidget);
+    expect(find.text('Tap the shutter to take a photo'), findsOneWidget);
     await AppHarness.tap(tester, find.bySemanticsLabel('Take'));
     await AppHarness.tap(tester, find.bySemanticsLabel('Take'));
     await AppHarness.tap(tester, find.text('Video'));
     await AppHarness.tap(tester, find.bySemanticsLabel('Take'));
-    await tester.pump(const Duration(seconds: 3));
-    await AppHarness.tap(tester, find.bySemanticsLabel('Stop recording'));
     await AppHarness.tap(
       tester,
       find.bySemanticsLabel('3 captured. Review and submit.'),
@@ -88,8 +86,6 @@ void main() {
     await AppHarness.tap(tester, find.text('Capture evidence'));
     await AppHarness.tap(tester, find.text('Video'));
     await AppHarness.tap(tester, find.bySemanticsLabel('Take'));
-    await tester.pump(const Duration(seconds: 2));
-    await AppHarness.tap(tester, find.bySemanticsLabel('Stop recording'));
     await AppHarness.tap(
       tester,
       find.bySemanticsLabel('1 captured. Review and submit.'),

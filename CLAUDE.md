@@ -29,7 +29,7 @@ Rules:
 - DI is `get_it` + `injectable`. Run `dart run build_runner build` after adding or changing annotations.
 - Screens that load data use `LoadCubit<T>` + `LoadView` (`core/bloc/`): loading/error/retry, actions with snackbars, and silent reload when another screen publishes a change on `DataChanges` (`core/sync/`). Repositories publish after every successful write.
 - Cubits shared across tabs and full-screen pages (dashboard, inbox, site assignment, outbox, evidence draft, settings) live in `SessionScope` (`core/navigation/session_scope.dart`), rebuilt per signed-in user.
-- Device capabilities (GPS, camera, receipts picker, geocoding, permissions, FCM token) are interfaces in `core/device/device_services.dart`. The current implementations are **simulations**; swap in real plugins there.
+- Device capabilities (GPS, camera, receipts picker, geocoding, permissions, FCM token) are interfaces in `core/device/device_services.dart`. GPS (`geolocator`), camera (`image_picker`: the phone's camera app, camera only, never the gallery), receipts (`file_picker`, images and PDFs) and permissions (`permission_handler`) are real (`core/device/real_device_services.dart`). Captured and picked files are copied into app storage (`MediaStore`) so they survive in the outbox. `core/di/device_module.dart` switches to the simulations when `SIMULATE_DEVICE=true` (tests always do). Geocoding and the FCM token are still simulated.
 
 ## Material: `material_ui`, not `flutter/material`
 
@@ -52,6 +52,7 @@ Configuration lives in a gitignored `.env` (loaded with `flutter_dotenv` in `App
 |---|---|
 | `API_BASE_URL` | Apex API including `/api/v1` (dev: `https://apex.pntr.dev/api/v1`; laptop backend from the Android emulator: `http://10.0.2.2:8000/api/v1`) |
 | `LIVE_PROJECTS`, `LIVE_MILESTONES`, `LIVE_EVIDENCE`, `LIVE_NOTIFICATIONS` | `true` = that feature calls the real API; `false` = in-app mock server |
+| `SIMULATE_DEVICE` | `true` = fake GPS, camera, receipt picker and permissions (desktop, demos); `false` on phones |
 
 **Auth and profile are always live** (`POST /auth/firebase`, `GET`/`PATCH /users/me`); they have no mock.
 

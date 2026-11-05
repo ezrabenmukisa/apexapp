@@ -4,10 +4,22 @@ import 'package:injectable/injectable.dart';
 
 import '../../features/evidence/domain/entities/evidence.dart';
 
-// Device capabilities behind interfaces. Every implementation below is a
-// SIMULATION so the screens work end to end; real ones (camera, geolocator,
-// geocoding, file_picker, permission_handler, firebase_messaging) replace
-// them in their feature issues without touching the UI.
+// Device capabilities behind interfaces. The implementations below are
+// SIMULATIONS, used by tests and when `SIMULATE_DEVICE=true` in `.env`.
+// Real GPS, camera, receipt picker and permissions are in
+// `real_device_services.dart`; `core/di/device_module.dart` picks one or
+// the other. Geocoding and the FCM token are still simulated.
+
+/// A device problem the user can fix (location off, camera refused…).
+/// [message] is shown as is.
+class DeviceException implements Exception {
+  const DeviceException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'DeviceException: $message';
+}
 
 /// GPS from device sensors.
 abstract interface class LocationService {
@@ -16,13 +28,12 @@ abstract interface class LocationService {
   Future<GeoFix> currentFix();
 }
 
-/// In-app camera only: site media can never come from the gallery.
+/// Camera only: site media can never come from the gallery. Each call
+/// opens the camera once; null when the user closes it without a shot.
+/// Throws [DeviceException] for problems the user can fix.
 abstract interface class CaptureService {
-  Future<CapturedMedia> takePhoto({required String label});
-  Future<CapturedMedia> recordVideo({
-    required String label,
-    required int seconds,
-  });
+  Future<CapturedMedia?> takePhoto();
+  Future<CapturedMedia?> recordVideo({required Duration maxDuration});
 }
 
 /// Receipts and invoices: gallery and PDFs are allowed.
@@ -54,7 +65,7 @@ abstract interface class PushTokenProvider {
 const _siteLat = 0.40441;
 const _siteLng = 32.45940;
 
-@LazySingleton(as: LocationService)
+@lazySingleton
 class SimulatedLocationService implements LocationService {
   final _random = Random();
 
@@ -74,40 +85,49 @@ class SimulatedLocationService implements LocationService {
   }
 }
 
-@LazySingleton(as: CaptureService)
+@lazySingleton
 class SimulatedCaptureService implements CaptureService {
   SimulatedCaptureService(this._location);
 
-  final LocationService _location;
+  final SimulatedLocationService _location;
+  int _shots = 0;
+
+  static const _labels = [
+    'east wall',
+    'north wall',
+    'west wall',
+    'south wall',
+    'ring beam close-up',
+    'site overview',
+    'materials on site',
+    'detail',
+  ];
 
   @override
-  Future<CapturedMedia> takePhoto({required String label}) async {
+  Future<CapturedMedia?> takePhoto() async {
     final fix = await _location.currentFix();
     return CapturedMedia(
       id: 'cap_${DateTime.now().microsecondsSinceEpoch}',
       kind: MediaKind.photo,
       fix: fix,
-      label: label,
+      label: _labels[_shots++ % _labels.length],
     );
   }
 
   @override
-  Future<CapturedMedia> recordVideo({
-    required String label,
-    required int seconds,
-  }) async {
+  Future<CapturedMedia?> recordVideo({required Duration maxDuration}) async {
     final fix = await _location.currentFix();
     return CapturedMedia(
       id: 'cap_${DateTime.now().microsecondsSinceEpoch}',
       kind: MediaKind.video,
       fix: fix,
-      label: label,
-      durationSeconds: seconds,
+      label: 'walk-through',
+      durationSeconds: 20,
     );
   }
 }
 
-@LazySingleton(as: ReceiptPicker)
+@lazySingleton
 class SimulatedReceiptPicker implements ReceiptPicker {
   var _count = 0;
 
@@ -131,7 +151,7 @@ class SimulatedGeocodingService implements GeocodingService {
   }
 }
 
-@LazySingleton(as: PermissionsService)
+@lazySingleton
 class SimulatedPermissionsService implements PermissionsService {
   final _granted = <DevicePermission>{DevicePermission.location};
 

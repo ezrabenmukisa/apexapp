@@ -38,6 +38,11 @@ abstract final class AppConfig {
   /// Which features call the real API; the rest use the in-app mock server.
   static LiveFeatures get live => const LiveFeatures();
 
+  /// `SIMULATE_DEVICE=true`: fake GPS, camera, receipt picker and
+  /// permissions instead of the real ones (tests, desktop, UI demos).
+  static bool get simulateDevice =>
+      dotenv.getBool('SIMULATE_DEVICE', fallback: false);
+
   static const Duration connectTimeout = Duration(seconds: 20);
   static const Duration receiveTimeout = Duration(seconds: 30);
 

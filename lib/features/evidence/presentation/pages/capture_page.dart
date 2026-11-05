@@ -13,17 +13,22 @@ import '../../../../core/widgets/hatched_box.dart';
 import '../bloc/evidence_cubits.dart';
 import '../widgets/media_tiles.dart';
 
-/// Site manager 08: in-app camera. No gallery — site media must be taken
-/// here so location and time are frozen at the shutter.
-///
-/// The viewfinder is simulated until the `camera` plugin lands (issue #4).
+/// Site manager 08: capture. The shutter opens the phone's own camera
+/// (never the gallery), so location and time are taken at the shot. The
+/// panel shows the live GPS fix and whether the phone is on site.
 class CapturePage extends StatelessWidget {
   const CapturePage({super.key});
 
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (_) => getIt<CaptureCubit>()..refreshFix(),
-    child: const _CaptureView(),
+    child: BlocListener<CaptureCubit, CaptureState>(
+      listenWhen: (a, b) => b.error != null && a.error != b.error,
+      listener: (context, state) => ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(state.error!))),
+      child: const _CaptureView(),
+    ),
   );
 }
 
@@ -54,7 +59,6 @@ class _CaptureView extends StatelessWidget {
             project.longitude,
           );
     final isVideo = capture.mode == CaptureMode.video;
-    String mmss(int s) => '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
 
     return Theme(
       data: Theme.of(context).copyWith(scaffoldBackgroundColor: AppColors.ink),
@@ -101,7 +105,11 @@ class _CaptureView extends StatelessWidget {
                         : '${Formatters.coordinates(fix.latitude, fix.longitude).replaceAll(',', ' ·')}'
                               '${distance == null ? '' : ' · ${distance.round()} M FROM PIN'}',
                     onSite: distance != null && distance <= onSiteRadiusMetres,
-                    recording: capture.recording,
+                    hint: capture.busy
+                        ? 'Camera open…'
+                        : isVideo
+                        ? 'Tap the shutter to record, up to 1 minute'
+                        : 'Tap the shutter to take a photo',
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -112,7 +120,7 @@ class _CaptureView extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: TextButton(
-                          onPressed: capture.recording
+                          onPressed: capture.busy
                               ? null
                               : () =>
                                     context.read<CaptureCubit>().setMode(mode),
@@ -154,33 +162,23 @@ class _CaptureView extends StatelessWidget {
                         ),
                       ),
                       _ShutterButton(
-                        recording: capture.recording,
                         busy: capture.busy,
                         onTap: () => _shutter(context),
                       ),
                       Expanded(
                         child: Align(
                           alignment: Alignment.centerRight,
-                          child: isVideo
-                              ? Text(
-                                  '${mmss(capture.seconds)} / ${mmss(CaptureCubit.maxVideoSeconds)}',
-                                  style: AppTextStyles.mono(
-                                    color: AppColors.surface,
-                                    size: 13,
-                                    letterSpacing: 0,
+                          child: TextButton(
+                            onPressed: draft.media.isEmpty
+                                ? null
+                                : () => context.pushReplacement(
+                                    AppRoutes.siteSubmit,
                                   ),
-                                )
-                              : TextButton(
-                                  onPressed: draft.media.isEmpty
-                                      ? null
-                                      : () => context.pushReplacement(
-                                          AppRoutes.siteSubmit,
-                                        ),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: AppColors.surface,
-                                  ),
-                                  child: const Text('Done'),
-                                ),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.surface,
+                            ),
+                            child: const Text('Done'),
+                          ),
                         ),
                       ),
                     ],
@@ -199,12 +197,12 @@ class _Viewfinder extends StatelessWidget {
   const _Viewfinder({
     required this.fixText,
     required this.onSite,
-    required this.recording,
+    required this.hint,
   });
 
   final String fixText;
   final bool onSite;
-  final bool recording;
+  final String hint;
 
   @override
   Widget build(BuildContext context) => HatchedBox(
@@ -215,27 +213,15 @@ class _Viewfinder extends StatelessWidget {
       children: [
         const Positioned.fill(child: CustomPaint(painter: _CornersPainter())),
         Center(
-          child: Text(
-            '[live camera]',
-            style: AppTextStyles.caption.copyWith(color: AppColors.rule),
-          ),
-        ),
-        if (recording)
-          Positioned(
-            top: 16,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                color: AppColors.flagged,
-                child: Text(
-                  '● REC',
-                  style: AppTextStyles.mono(color: AppColors.surface, size: 11),
-                ),
-              ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              hint,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.caption.copyWith(color: AppColors.rule),
             ),
           ),
+        ),
         Positioned(
           left: 10,
           right: 10,
@@ -330,20 +316,15 @@ class _CornersPainter extends CustomPainter {
 }
 
 class _ShutterButton extends StatelessWidget {
-  const _ShutterButton({
-    required this.recording,
-    required this.busy,
-    required this.onTap,
-  });
+  const _ShutterButton({required this.busy, required this.onTap});
 
-  final bool recording;
   final bool busy;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: recording ? 'Stop recording' : 'Take',
+    label: 'Take',
     excludeSemantics: true,
     child: GestureDetector(
       onTap: busy ? null : onTap,
@@ -359,10 +340,8 @@ class _ShutterButton extends StatelessWidget {
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
             color: busy ? AppColors.lateriteDeep : const Color(0xFFC75A2F),
-            shape: recording ? BoxShape.rectangle : BoxShape.circle,
-            borderRadius: recording ? BorderRadius.circular(8) : null,
+            shape: BoxShape.circle,
           ),
-          margin: recording ? const EdgeInsets.all(14) : EdgeInsets.zero,
         ),
       ),
     ),

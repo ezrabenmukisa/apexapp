@@ -12,7 +12,9 @@
 
 import 'package:app/core/device/connectivity_service.dart' as _i511;
 import 'package:app/core/device/device_services.dart' as _i62;
+import 'package:app/core/device/real_device_services.dart' as _i346;
 import 'package:app/core/di/data_source_module.dart' as _i1066;
+import 'package:app/core/di/device_module.dart' as _i1013;
 import 'package:app/core/di/register_module.dart' as _i313;
 import 'package:app/core/mock/mock_api_server.dart' as _i664;
 import 'package:app/core/router/pending_invite.dart' as _i35;
@@ -104,6 +106,7 @@ import 'package:firebase_auth/firebase_auth.dart' as _i59;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart' as _i558;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:google_sign_in/google_sign_in.dart' as _i116;
+import 'package:image_picker/image_picker.dart' as _i183;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
 
@@ -115,6 +118,7 @@ extension GetItInjectableX on _i174.GetIt {
   }) async {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
     final registerModule = _$RegisterModule();
+    final deviceModule = _$DeviceModule();
     final dataSourceModule = _$DataSourceModule();
     await gh.singletonAsync<_i460.SharedPreferences>(
       () => registerModule.prefs,
@@ -123,8 +127,24 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i511.ConnectivityService>(
       () => _i511.ConnectivityService(),
     );
+    gh.lazySingleton<_i62.SimulatedLocationService>(
+      () => _i62.SimulatedLocationService(),
+    );
+    gh.lazySingleton<_i62.SimulatedReceiptPicker>(
+      () => _i62.SimulatedReceiptPicker(),
+    );
+    gh.lazySingleton<_i62.SimulatedPermissionsService>(
+      () => _i62.SimulatedPermissionsService(),
+    );
+    gh.lazySingleton<_i346.GeolocatorLocationService>(
+      () => _i346.GeolocatorLocationService(),
+    );
+    gh.lazySingleton<_i346.HandlerPermissionsService>(
+      () => _i346.HandlerPermissionsService(),
+    );
     gh.lazySingleton<_i59.FirebaseAuth>(() => registerModule.firebaseAuth);
     gh.lazySingleton<_i116.GoogleSignIn>(() => registerModule.googleSignIn);
+    gh.lazySingleton<_i183.ImagePicker>(() => registerModule.imagePicker);
     gh.lazySingleton<_i558.FlutterSecureStorage>(
       () => registerModule.secureStorage,
     );
@@ -134,15 +154,23 @@ extension GetItInjectableX on _i174.GetIt {
       dispose: (i) => i.dispose(),
     );
     gh.lazySingleton<_i62.PermissionsService>(
-      () => _i62.SimulatedPermissionsService(),
+      () => deviceModule.permissions(
+        gh<_i346.HandlerPermissionsService>(),
+        gh<_i62.SimulatedPermissionsService>(),
+      ),
+    );
+    gh.lazySingleton<_i62.SimulatedCaptureService>(
+      () => _i62.SimulatedCaptureService(gh<_i62.SimulatedLocationService>()),
     );
     gh.lazySingleton<_i62.PushTokenProvider>(
       () => _i62.SimulatedPushTokenProvider(),
     );
     gh.lazySingleton<_i62.LocationService>(
-      () => _i62.SimulatedLocationService(),
+      () => deviceModule.location(
+        gh<_i346.GeolocatorLocationService>(),
+        gh<_i62.SimulatedLocationService>(),
+      ),
     );
-    gh.lazySingleton<_i62.ReceiptPicker>(() => _i62.SimulatedReceiptPicker());
     gh.lazySingleton<_i62.GeocodingService>(
       () => _i62.SimulatedGeocodingService(),
     );
@@ -155,20 +183,40 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i19.PermissionsCubit>(
       () => _i19.PermissionsCubit(gh<_i62.PermissionsService>()),
     );
-    gh.factory<_i283.EvidenceDraftCubit>(
-      () => _i283.EvidenceDraftCubit(gh<_i62.ReceiptPicker>()),
+    gh.lazySingleton<_i346.MediaStore>(() => _i346.AppMediaStore());
+    gh.lazySingleton<_i346.PickerCaptureService>(
+      () => _i346.PickerCaptureService(
+        gh<_i62.LocationService>(),
+        gh<_i183.ImagePicker>(),
+        gh<_i346.MediaStore>(),
+      ),
     );
     gh.lazySingleton<_i952.RoleLocalDataSource>(
       () => _i952.RoleLocalDataSource(gh<_i460.SharedPreferences>()),
     );
+    gh.lazySingleton<_i62.CaptureService>(
+      () => deviceModule.capture(
+        gh<_i346.PickerCaptureService>(),
+        gh<_i62.SimulatedCaptureService>(),
+      ),
+    );
     gh.lazySingleton<_i576.SettingsRepository>(
       () => _i748.SettingsRepositoryImpl(gh<_i460.SharedPreferences>()),
+    );
+    gh.lazySingleton<_i346.FilePickerReceiptPicker>(
+      () => _i346.FilePickerReceiptPicker(gh<_i346.MediaStore>()),
     );
     gh.lazySingleton<_i361.Dio>(
       () => registerModule.dio(gh<_i59.FirebaseAuth>()),
     );
     gh.factory<_i19.SettingsCubit>(
       () => _i19.SettingsCubit(gh<_i576.SettingsRepository>()),
+    );
+    gh.lazySingleton<_i62.ReceiptPicker>(
+      () => deviceModule.receipts(
+        gh<_i346.FilePickerReceiptPicker>(),
+        gh<_i62.SimulatedReceiptPicker>(),
+      ),
     );
     gh.lazySingleton<_i510.FirebaseAuthDataSource>(
       () => _i510.FirebaseAuthDataSource(
@@ -179,11 +227,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i607.ProfileApiDataSource>(
       () => _i607.ProfileApiDataSourceRemote(gh<_i361.Dio>()),
     );
-    gh.lazySingleton<_i62.CaptureService>(
-      () => _i62.SimulatedCaptureService(gh<_i62.LocationService>()),
-    );
     gh.lazySingleton<_i491.AuthApiDataSource>(
       () => _i491.AuthApiDataSourceRemote(gh<_i361.Dio>()),
+    );
+    gh.factory<_i283.EvidenceDraftCubit>(
+      () => _i283.EvidenceDraftCubit(gh<_i62.ReceiptPicker>()),
     );
     gh.lazySingleton<_i765.AuthRepository>(
       () => _i39.AuthRepositoryImpl(
@@ -503,5 +551,7 @@ extension GetItInjectableX on _i174.GetIt {
 }
 
 class _$RegisterModule extends _i313.RegisterModule {}
+
+class _$DeviceModule extends _i1013.DeviceModule {}
 
 class _$DataSourceModule extends _i1066.DataSourceModule {}

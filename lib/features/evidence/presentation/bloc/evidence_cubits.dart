@@ -9,6 +9,7 @@ import '../../../../core/bloc/load_cubit.dart';
 import '../../../../core/device/connectivity_service.dart';
 import '../../../../core/device/device_services.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../../../../core/sync/data_changes.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../../../core/utils/geo.dart';
@@ -180,59 +181,48 @@ enum CaptureMode { photo, video }
 final class CaptureState extends Equatable {
   const CaptureState({
     this.mode = CaptureMode.photo,
-    this.recording = false,
-    this.seconds = 0,
     this.busy = false,
     this.fix,
+    this.error,
   });
 
   final CaptureMode mode;
-  final bool recording;
-  final int seconds;
+
+  /// The phone's camera is open (or the shot is being saved).
   final bool busy;
 
-  /// Live GPS shown in the viewfinder.
+  /// Live GPS shown on the capture screen.
   final GeoFix? fix;
+
+  /// Why the last capture failed, shown once in a snackbar.
+  final String? error;
 
   CaptureState copyWith({
     CaptureMode? mode,
-    bool? recording,
-    int? seconds,
     bool? busy,
     GeoFix? fix,
+    String? Function()? error,
   }) => CaptureState(
     mode: mode ?? this.mode,
-    recording: recording ?? this.recording,
-    seconds: seconds ?? this.seconds,
     busy: busy ?? this.busy,
     fix: fix ?? this.fix,
+    error: error == null ? this.error : error(),
   );
 
   @override
-  List<Object?> get props => [mode, recording, seconds, busy, fix];
+  List<Object?> get props => [mode, busy, fix, error];
 }
 
-/// In-app camera. Location and time are frozen when the shutter fires.
+/// Opens the phone's camera (photo or video, never the gallery). Location
+/// and time are taken around the shot by [CaptureService].
 @injectable
 class CaptureCubit extends Cubit<CaptureState> {
   CaptureCubit(this._capture, this._location) : super(const CaptureState());
 
   final CaptureService _capture;
   final LocationService _location;
-  Timer? _timer;
-  int _shots = 0;
 
-  static const maxVideoSeconds = 60;
-  static const _labels = [
-    'east wall',
-    'north wall',
-    'west wall',
-    'south wall',
-    'ring beam close-up',
-    'site overview',
-    'materials on site',
-    'detail',
-  ];
+  static const maxVideoDuration = Duration(minutes: 1);
 
   Future<void> refreshFix() async {
     try {
@@ -242,51 +232,34 @@ class CaptureCubit extends Cubit<CaptureState> {
   }
 
   void setMode(CaptureMode mode) {
-    if (!state.recording) emit(state.copyWith(mode: mode));
+    if (!state.busy) emit(state.copyWith(mode: mode));
   }
 
-  /// Shutter: takes a photo, or starts/stops a video.
+  /// Shutter: opens the camera for one photo or one video. Null when the
+  /// user backs out or something went wrong (see [CaptureState.error]).
   Future<CapturedMedia?> shutter() async {
     if (state.busy) return null;
-    if (state.mode == CaptureMode.photo) {
-      emit(state.copyWith(busy: true));
-      final media = await _capture.takePhoto(
-        label: _labels[_shots++ % _labels.length],
-      );
-      if (!isClosed) emit(state.copyWith(busy: false, fix: media.fix));
+    emit(state.copyWith(busy: true, error: () => null));
+    try {
+      final media = state.mode == CaptureMode.photo
+          ? await _capture.takePhoto()
+          : await _capture.recordVideo(maxDuration: maxVideoDuration);
+      if (!isClosed) emit(state.copyWith(busy: false, fix: media?.fix));
       return media;
+    } on DeviceException catch (e) {
+      if (!isClosed) emit(state.copyWith(busy: false, error: () => e.message));
+    } catch (e, st) {
+      appLogger.w('Capture failed', error: e, stackTrace: st);
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            busy: false,
+            error: () => 'Something went wrong with the camera. Try again.',
+          ),
+        );
+      }
     }
-    if (!state.recording) {
-      emit(state.copyWith(recording: true, seconds: 0));
-      _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-        final next = state.seconds + 1;
-        emit(state.copyWith(seconds: next));
-        if (next >= maxVideoSeconds) t.cancel();
-      });
-      return null;
-    }
-    return stopVideo();
-  }
-
-  Future<CapturedMedia?> stopVideo() async {
-    _timer?.cancel();
-    if (!state.recording) return null;
-    final seconds = state.seconds.clamp(1, maxVideoSeconds);
-    emit(state.copyWith(recording: false, busy: true));
-    final media = await _capture.recordVideo(
-      label: 'walk-through',
-      seconds: seconds,
-    );
-    if (!isClosed) {
-      emit(state.copyWith(busy: false, seconds: 0, fix: media.fix));
-    }
-    return media;
-  }
-
-  @override
-  Future<void> close() {
-    _timer?.cancel();
-    return super.close();
+    return null;
   }
 }
 
