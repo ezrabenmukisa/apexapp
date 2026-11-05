@@ -11,6 +11,7 @@ LIVE_PROJECTS=false
 LIVE_MILESTONES=false
 LIVE_EVIDENCE=false
 LIVE_NOTIFICATIONS=false
+SIMULATE_DEVICE=true
 ''',
   );
   await testMain();

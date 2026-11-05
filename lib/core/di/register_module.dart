@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,6 +19,9 @@ abstract class RegisterModule {
 
   @lazySingleton
   GoogleSignIn get googleSignIn => GoogleSignIn.instance;
+
+  @lazySingleton
+  ImagePicker get imagePicker => ImagePicker();
 
   @lazySingleton
   FlutterSecureStorage get secureStorage => const FlutterSecureStorage();
