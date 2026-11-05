@@ -21,6 +21,8 @@ abstract final class ApiEndpoints {
   // 4. Progress evidence management
   static String milestoneEvidence(String milestoneId) =>
       '/milestones/$milestoneId/evidence';
+  static String evidenceUploadUrls(String milestoneId) =>
+      '/milestones/$milestoneId/evidence/upload-urls';
   static String evidenceReviews(String evidenceId) =>
       '/evidence/$evidenceId/reviews';
 

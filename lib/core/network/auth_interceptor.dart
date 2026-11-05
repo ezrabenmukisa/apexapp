@@ -6,6 +6,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 /// The backend derives the user from this header, so no endpoint takes a
 /// `user_id` for the current user. On a 401 the token is force-refreshed
 /// and the request retried once.
+///
+/// Requests with `extra[skipAuthKey] == true` (presigned S3 uploads) go
+/// out without the token: S3 rejects a second auth scheme, and the token
+/// must never leave the Apex API.
 class AuthInterceptor extends QueuedInterceptor {
   AuthInterceptor(this._firebaseAuth, this._dio);
 
@@ -14,11 +18,15 @@ class AuthInterceptor extends QueuedInterceptor {
 
   static const _retriedKey = 'auth_retried';
 
+  /// Set in `Options.extra` to send a request without the Firebase token.
+  static const skipAuthKey = 'skip_auth';
+
   @override
   Future<void> onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
+    if (options.extra[skipAuthKey] == true) return handler.next(options);
     final token = await _firebaseAuth.currentUser?.getIdToken();
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
@@ -35,6 +43,7 @@ class AuthInterceptor extends QueuedInterceptor {
     final user = _firebaseAuth.currentUser;
     if (err.response?.statusCode != 401 ||
         user == null ||
+        request.extra[skipAuthKey] == true ||
         request.extra[_retriedKey] == true) {
       return handler.next(err);
     }

@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../logging/app_logger.dart';
 
 /// One compact log entry per request/response, with timing. The bearer
-/// token is never printed. Added to Dio in debug builds only.
+/// token is never printed, nor are presigned S3 signatures or file bytes.
+/// Added to Dio in debug builds only.
 class LoggingInterceptor extends Interceptor {
   static const _startKey = 'log_started_at';
 
@@ -11,8 +13,8 @@ class LoggingInterceptor extends Interceptor {
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     options.extra[_startKey] = DateTime.now();
     appLogger.d(
-      '→ ${options.method} ${options.uri}'
-      '${options.data == null ? '' : '\n${_describe(options.data)}'}',
+      '→ ${options.method} ${url(options.uri)}'
+      '${options.data == null ? '' : '\n${describe(options.data)}'}',
     );
     handler.next(options);
   }
@@ -24,8 +26,8 @@ class LoggingInterceptor extends Interceptor {
   ) {
     final options = response.requestOptions;
     appLogger.d(
-      '← ${response.statusCode} ${options.method} ${options.uri} '
-      '(${_elapsed(options)})\n${_describe(response.data)}',
+      '← ${response.statusCode} ${options.method} ${url(options.uri)} '
+      '(${_elapsed(options)})\n${describe(response.data)}',
     );
     handler.next(response);
   }
@@ -35,8 +37,8 @@ class LoggingInterceptor extends Interceptor {
     final options = err.requestOptions;
     appLogger.w(
       '✕ ${err.response?.statusCode ?? err.type.name} ${options.method} '
-      '${options.uri} (${_elapsed(options)})'
-      '${err.response?.data == null ? '' : '\n${_describe(err.response?.data)}'}',
+      '${url(options.uri)} (${_elapsed(options)})'
+      '${err.response?.data == null ? '' : '\n${describe(err.response?.data)}'}',
       error: err.message,
     );
     handler.next(err);
@@ -49,10 +51,20 @@ class LoggingInterceptor extends Interceptor {
         : '?';
   }
 
-  static String _describe(Object? data) => switch (data) {
+  /// The URL with a presigned query (S3 signature, credential) replaced.
+  @visibleForTesting
+  static String url(Uri uri) =>
+      uri.query.contains('X-Amz-') || uri.query.contains('Signature=')
+      ? '${uri.replace(query: '')}<signed>'
+      : '$uri';
+
+  @visibleForTesting
+  static String describe(Object? data) => switch (data) {
     FormData(:final fields, :final files) =>
       'form-data fields=${fields.map((f) => f.key).toList()} '
           'files=${files.map((f) => f.value.filename).toList()}',
+    List<int>() => '<${data.length} bytes>',
+    Stream() => '<byte stream>',
     _ => '$data',
   };
 }

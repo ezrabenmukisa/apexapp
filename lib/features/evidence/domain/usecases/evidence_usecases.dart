@@ -151,9 +151,7 @@ class GetSiteAssignment implements UseCase<SiteAssignment?, NoParams> {
       Milestone? lastReviewed;
       ReviewSummary? lastReview;
       for (final m in o.milestones.reversed) {
-        if (m.status == MilestoneStatus.notStarted ||
-            m.status == MilestoneStatus.inProgress ||
-            m.status == MilestoneStatus.submitted) {
+        if (m.status.isPlanning || m.status == MilestoneStatus.submitted) {
           continue;
         }
         final e = await _evidence.getEvidence(m.milestoneId);

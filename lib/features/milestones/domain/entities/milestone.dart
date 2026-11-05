@@ -1,30 +1,32 @@
 import 'package:equatable/equatable.dart';
 
-/// Milestone lifecycle. The contract lists `status(enum)` without values;
-/// these follow the review flow and are tolerant of unknown values.
+/// What a milestone card shows. The API keeps progress on the milestone
+/// (`PENDING`/`IN_PROGRESS`/`COMPLETED`/`DELAYED`) and review state on its
+/// latest evidence; the data layer folds both into this one status.
 enum MilestoneStatus {
-  notStarted('NOT_STARTED'),
-  inProgress('IN_PROGRESS'),
+  notStarted,
+  inProgress,
+
+  /// Behind schedule (the API's `DELAYED`), no evidence under review.
+  delayed,
 
   /// Evidence submitted, awaiting the owner's review.
-  submitted('SUBMITTED'),
-  changesRequested('CHANGES_REQUESTED'),
-  approved('APPROVED'),
-  flagged('FLAGGED');
-
-  const MilestoneStatus(this.apiValue);
-
-  final String apiValue;
-
-  static MilestoneStatus fromApi(Object? value) =>
-      values.firstWhere((s) => s.apiValue == value, orElse: () => notStarted);
+  submitted,
+  changesRequested,
+  approved,
+  flagged;
 
   /// Site manager can submit (new) evidence in these states.
   bool get acceptsEvidence =>
       this == notStarted ||
       this == inProgress ||
+      this == delayed ||
       this == changesRequested ||
       this == flagged;
+
+  /// Work hasn't reached review yet; the owner can still edit the plan.
+  bool get isPlanning =>
+      this == notStarted || this == inProgress || this == delayed;
 }
 
 /// A planned stage of a project (`/projects/{id}/milestones`).

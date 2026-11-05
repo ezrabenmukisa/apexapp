@@ -77,6 +77,12 @@ Sign-in options screen: **Continue with Google** (google_sign_in → Firebase cr
 
 An owner's invite emails `https://apex.pntr.dev/invite?token=…`. Android opens it in the app through an App Links intent filter (`AndroidManifest.xml`, verified by the backend's `/.well-known/assetlinks.json`); go_router routes it to `AppRoutes.invite` → `AcceptInvitePage`, which calls `POST /projects/invitations/accept` and opens the project. If the user isn't signed in yet, the router keeps the token in `PendingInvite` and returns to the invite once they are (`authRedirect(pendingInvite:)`). iOS Universal Links aren't set up yet: they need the Associated Domains capability on the signing team and `apple-app-site-association` on the backend.
 
+## Milestones, evidence and notifications (issues #3–#5)
+
+All live, through the shared Dio, so every call is logged by `LoggingInterceptor`.
+- A milestone's badge combines the API's milestone status with its latest evidence status (`MilestoneModel.displayStatus`; rules in `docs/api-assumptions.md`). That's why milestone reads also call `GET /milestones/{id}/evidence`.
+- Evidence submission: get `upload-urls`, `PUT` each file to S3 (`Options.extra[AuthInterceptor.skipAuthKey] = true`, so no Firebase token is sent), then `POST` JSON with the file keys.
+
 ## Design system
 
 Use the tokens in `core/theme/`. Never hard-code colours or fonts in features.

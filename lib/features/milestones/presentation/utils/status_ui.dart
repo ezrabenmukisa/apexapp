@@ -7,6 +7,7 @@ extension MilestoneStatusUi on MilestoneStatus {
   String get label => switch (this) {
     MilestoneStatus.notStarted => 'Not started',
     MilestoneStatus.inProgress => 'In progress',
+    MilestoneStatus.delayed => 'Delayed',
     MilestoneStatus.submitted => 'Review',
     MilestoneStatus.changesRequested => 'Changes requested',
     MilestoneStatus.approved => 'Approved',
@@ -22,6 +23,7 @@ extension MilestoneStatusUi on MilestoneStatus {
   StatusTone get tone => switch (this) {
     MilestoneStatus.notStarted => StatusTone.notStarted,
     MilestoneStatus.inProgress => StatusTone.inProgress,
+    MilestoneStatus.delayed => StatusTone.changes,
     MilestoneStatus.submitted => StatusTone.awaiting,
     MilestoneStatus.changesRequested => StatusTone.changes,
     MilestoneStatus.approved => StatusTone.approved,
