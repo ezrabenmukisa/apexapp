@@ -31,8 +31,8 @@ class AppNotification extends Equatable {
 }
 
 enum DevicePlatform {
-  android('ANDROID'),
-  ios('IOS');
+  android('android'),
+  ios('ios');
 
   const DevicePlatform(this.apiValue);
 

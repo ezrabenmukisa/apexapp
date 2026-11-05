@@ -95,8 +95,7 @@ class ProjectDetailPage extends StatelessWidget {
                         milestone: m,
                         highlight: m.status == MilestoneStatus.submitted,
                         onTap: () => context.push(
-                          m.status == MilestoneStatus.notStarted ||
-                                  m.status == MilestoneStatus.inProgress
+                          m.status.isPlanning
                               ? AppRoutes.editMilestone(
                                   projectId,
                                   m.milestoneId,

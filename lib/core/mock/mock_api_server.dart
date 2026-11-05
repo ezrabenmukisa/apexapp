@@ -100,7 +100,7 @@ class MockApiServer {
     _save();
   }
 
-  String _key(String uid) => 'mock_api.db.v2.$uid';
+  String _key(String uid) => 'mock_api.db.v3.$uid';
 
   void _save() => _prefs.setString(_key(_uid), jsonEncode(_db));
 
@@ -245,9 +245,9 @@ class MockApiServer {
   /// invitation id.
   JsonMap inviteMember(String projectId, String email, String role) {
     _requireOwner(projectId);
-    if (_table('members').any(
-      (m) => m['project_id'] == projectId && m['contact_email'] == email,
-    )) {
+    if (_table(
+      'members',
+    ).any((m) => m['project_id'] == projectId && m['contact_email'] == email)) {
       throw const ServerException(
         'That person is already on this project.',
         statusCode: 409,
@@ -273,10 +273,8 @@ class MockApiServer {
   JsonMap acceptInvitation(String token) {
     final invitation = _table('invitations').firstWhere(
       (i) => i['invitation_id'] == token,
-      orElse: () => throw const ServerException(
-        'Invitation not found',
-        statusCode: 404,
-      ),
+      orElse: () =>
+          throw const ServerException('Invitation not found', statusCode: 404),
     );
     if (invitation['status'] != 'pending') {
       throw const ServerException(
@@ -346,7 +344,7 @@ class MockApiServer {
       'due_date': null,
       'planned_budget': null,
       ...body,
-      'status': 'NOT_STARTED',
+      'status': 'PENDING',
     };
     _table('milestones').add(row);
     _resequence(
@@ -402,6 +400,21 @@ class MockApiServer {
     return _copy(rows.first);
   }
 
+  /// `status` of the milestone's latest evidence, or null if none.
+  String? latestEvidenceStatus(String milestoneId) {
+    String? status;
+    String? at;
+    for (final e in _table('evidence')) {
+      if (e['milestone_id'] != milestoneId) continue;
+      final submitted = e['submitted_at'] as String;
+      if (at == null || submitted.compareTo(at) > 0) {
+        at = submitted;
+        status = e['status'] as String;
+      }
+    }
+    return status;
+  }
+
   JsonMap submitEvidence(
     String milestoneId,
     JsonMap fields, {
@@ -433,7 +446,7 @@ class MockApiServer {
       'submitted_at': now,
     };
     _table('evidence').add(row);
-    milestone['status'] = 'SUBMITTED';
+    milestone['status'] = 'IN_PROGRESS';
     _notify(
       '${milestone['title']} evidence submitted',
       'You submitted ${milestone['title']} evidence at '
@@ -461,23 +474,23 @@ class MockApiServer {
     if (comment.trim().isEmpty) {
       throw const ServerException('comment is required', statusCode: 422);
     }
-    final (status, verb) = switch (decision) {
-      'APPROVE' => ('APPROVED', 'approved'),
-      'REQUEST_CHANGES' => ('CHANGES_REQUESTED', 'requested changes on'),
-      'FLAG' => ('FLAGGED', 'flagged'),
+    final verb = switch (decision) {
+      'APPROVED' => 'approved',
+      'REQUEST_CHANGES' => 'requested changes on',
+      'FLAGGED' => 'flagged',
       _ => throw const ServerException('Unknown decision', statusCode: 422),
     };
     evidence
-      ..['status'] = status
+      ..['status'] = decision
       ..['latest_review'] = {
         'decision': decision,
         'comment': comment,
         'reviewed_at': DateTime.now().toUtc().toIso8601String(),
       };
-    milestone['status'] = status;
+    if (decision == 'APPROVED') milestone['status'] = 'COMPLETED';
     final title = milestone['title'];
     _notify(switch (decision) {
-      'APPROVE' => '$title approved',
+      'APPROVED' => '$title approved',
       'REQUEST_CHANGES' => 'Changes requested on $title',
       _ => '$title flagged',
     }, 'You $verb $title at ${_clock(DateTime.now())}: "$comment"');
@@ -630,7 +643,7 @@ class MockApiServer {
         -44,
         -14,
         35000000,
-        'APPROVED',
+        'COMPLETED',
       ),
       milestone(
         'mst_walling',
@@ -640,7 +653,7 @@ class MockApiServer {
         -13,
         16,
         28000000,
-        isManager ? 'IN_PROGRESS' : 'SUBMITTED',
+        'IN_PROGRESS',
       ),
       milestone(
         'mst_roofing',
@@ -650,7 +663,7 @@ class MockApiServer {
         17,
         37,
         32000000,
-        'NOT_STARTED',
+        'PENDING',
       ),
       milestone(
         'mst_finishing',
@@ -660,7 +673,7 @@ class MockApiServer {
         38,
         82,
         45000000,
-        'NOT_STARTED',
+        'PENDING',
       ),
     ]);
 
@@ -689,7 +702,7 @@ class MockApiServer {
       'status': 'APPROVED',
       'submitted_at': at(-15, 16, 15),
       'latest_review': {
-        'decision': 'APPROVE',
+        'decision': 'APPROVED',
         'comment': 'Good, thanks for the DPC close-up.',
         'reviewed_at': at(-14, 21, 14),
       },

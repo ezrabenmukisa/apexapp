@@ -25,13 +25,20 @@ abstract final class EvidenceModel {
     },
   );
 
-  /// Text fields of the multipart submission; files are added separately.
-  static Map<String, dynamic> draftFields(EvidenceDraft d) => {
+  /// `EvidenceCreate`: the text fields plus the S3 keys of files already
+  /// uploaded through `…/evidence/upload-urls`.
+  static Map<String, dynamic> draftToJson(
+    EvidenceDraft d, {
+    List<String>? siteMediaKeys,
+    List<String>? receiptMediaKeys,
+  }) => {
     'description': d.description,
     'captured_latitude': d.fix.latitude,
     'captured_longitude': d.fix.longitude,
     'captured_at': d.fix.timestamp.toUtc().toIso8601String(),
+    'site_media_keys': ?siteMediaKeys,
     'expenditure_notes': ?d.expenditureNotes,
     'total_cost_spent': ?d.totalCostSpent,
+    'receipt_media_keys': ?receiptMediaKeys,
   };
 }

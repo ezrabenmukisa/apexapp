@@ -3,22 +3,25 @@ import 'package:equatable/equatable.dart';
 enum EvidenceStatus {
   submitted('SUBMITTED'),
   approved('APPROVED'),
-  changesRequested('CHANGES_REQUESTED'),
+  changesRequested('REQUEST_CHANGES'),
   flagged('FLAGGED');
 
   const EvidenceStatus(this.apiValue);
 
   final String apiValue;
 
-  static EvidenceStatus fromApi(Object? value) =>
-      values.firstWhere((s) => s.apiValue == value, orElse: () => submitted);
+  /// Also reads `CHANGES_REQUESTED`, which outbox rows saved by older
+  /// builds still hold.
+  static EvidenceStatus fromApi(Object? value) => value == 'CHANGES_REQUESTED'
+      ? changesRequested
+      : values.firstWhere((s) => s.apiValue == value, orElse: () => submitted);
 }
 
 /// The owner's decision on a submission (`POST /evidence/{id}/reviews`).
 enum ReviewDecision {
-  approve('APPROVE'),
+  approve('APPROVED'),
   requestChanges('REQUEST_CHANGES'),
-  flag('FLAG');
+  flag('FLAGGED');
 
   const ReviewDecision(this.apiValue);
 
@@ -28,8 +31,9 @@ enum ReviewDecision {
       values.firstWhere((d) => d.apiValue == value, orElse: () => approve);
 }
 
-/// The owner's decision on a submission. Not in the initial contract:
-/// read from an optional `latest_review` object on the evidence response.
+/// The owner's decision on a submission. The live API doesn't return it
+/// yet: read from an optional `latest_review` object on the evidence
+/// response (the mock server sends one).
 class ReviewSummary extends Equatable {
   const ReviewSummary({
     required this.decision,
