@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/files/documents.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -220,6 +221,15 @@ class _SubmitEvidencePageState extends State<SubmitEvidencePage> {
                         for (final r in draft.receipts)
                           ReceiptChip(
                             name: r.name,
+                            onTap: r.localPath == null
+                                ? null
+                                : () => context.push(
+                                    AppRoutes.document,
+                                    extra: DocumentRef(
+                                      name: r.name,
+                                      localPath: r.localPath,
+                                    ),
+                                  ),
                             onRemove: () => context
                                 .read<EvidenceDraftCubit>()
                                 .removeReceipt(r.id),

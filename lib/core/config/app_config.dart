@@ -43,6 +43,12 @@ abstract final class AppConfig {
   static bool get simulateDevice =>
       dotenv.getBool('SIMULATE_DEVICE', fallback: false);
 
+  /// Google Maps key for the site-pin map. Empty = maps can't load tiles.
+  /// Android reads it at build time (app/build.gradle.kts); iOS gets it from
+  /// [MapsKey.register] at start-up.
+  static String get googleMapsApiKey =>
+      dotenv.maybeGet('GOOGLE_MAPS_API_KEY')?.trim() ?? '';
+
   static const Duration connectTimeout = Duration(seconds: 20);
   static const Duration receiveTimeout = Duration(seconds: 30);
 

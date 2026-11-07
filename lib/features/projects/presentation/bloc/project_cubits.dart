@@ -4,12 +4,12 @@ import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
 
 import '../../../../core/bloc/load_cubit.dart';
-import '../../../../core/device/device_services.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/sync/data_changes.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../../milestones/domain/usecases/milestone_usecases.dart';
 import '../../domain/entities/project.dart';
+import '../../domain/entities/site_location.dart';
 import '../../domain/entities/project_overview.dart';
 import '../../domain/usecases/project_usecases.dart';
 
@@ -77,7 +77,7 @@ class ProjectOverviewCubit extends LoadCubit<ProjectOverview> {
   );
 }
 
-enum ProjectFormStatus { editing, locating, saving, saved }
+enum ProjectFormStatus { editing, saving, saved }
 
 final class ProjectFormState extends Equatable {
   const ProjectFormState({
@@ -135,13 +135,11 @@ final class ProjectFormState extends Equatable {
 /// Create project (onboarding step 3) and edit "Name, site & budget".
 @injectable
 class ProjectFormCubit extends Cubit<ProjectFormState> {
-  ProjectFormCubit(this._create, this._update, this._location, this._geocoder)
+  ProjectFormCubit(this._create, this._update)
     : super(const ProjectFormState());
 
   final CreateProject _create;
   final UpdateProject _update;
-  final LocationService _location;
-  final GeocodingService _geocoder;
 
   void loadExisting(Project p) => emit(
     ProjectFormState(
@@ -151,34 +149,14 @@ class ProjectFormCubit extends Cubit<ProjectFormState> {
     ),
   );
 
-  /// Drops the pin at the phone's position and suggests an address.
-  Future<void> dropPinHere() async {
-    emit(state.copyWith(status: ProjectFormStatus.locating));
-    try {
-      final fix = await _location.currentFix();
-      final address = await _geocoder.reverseGeocode(
-        fix.latitude,
-        fix.longitude,
-      );
-      if (isClosed) return;
-      emit(
-        state.copyWith(
-          status: ProjectFormStatus.editing,
-          latitude: fix.latitude,
-          longitude: fix.longitude,
-          suggestedAddress: address,
-        ),
-      );
-    } catch (_) {
-      if (isClosed) return;
-      emit(
-        state.copyWith(
-          status: ProjectFormStatus.editing,
-          error: 'Couldn\'t get your location. Check location access.',
-        ),
-      );
-    }
-  }
+  /// The owner confirmed a spot on the map picker.
+  void pinPicked(SiteLocation location) => emit(
+    state.copyWith(
+      latitude: location.latitude,
+      longitude: location.longitude,
+      suggestedAddress: location.address,
+    ),
+  );
 
   void targetDateChanged(DateTime date) =>
       emit(state.copyWith(targetDate: date));

@@ -27,6 +27,12 @@ abstract final class AppRoutes {
   static const ownerAccount = '/owner/account';
 
   static const newProject = '/owner/projects/new';
+
+  /// Full-screen map to set a site pin; `extra`: the current `SiteLocation?`.
+  static const locationPicker = '/location-picker';
+
+  /// In-app viewer for a receipt or document; `extra`: a `DocumentRef`.
+  static const document = '/document';
   static String project(String id) => '/owner/projects/$id';
   static String projectEdit(String id) => '/owner/projects/$id/edit';
   static String projectSettings(String id) => '/owner/projects/$id/settings';

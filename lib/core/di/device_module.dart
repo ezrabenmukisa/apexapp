@@ -4,7 +4,7 @@ import '../config/app_config.dart';
 import '../device/device_services.dart';
 import '../device/real_device_services.dart';
 
-/// Real GPS, camera, receipt picker and permissions, or the simulations
+/// Real GPS, geocoding, camera, receipt picker and permissions, or the simulations
 /// when `SIMULATE_DEVICE=true` (tests, desktop, quick UI demos).
 @module
 abstract class DeviceModule {
@@ -24,6 +24,12 @@ abstract class DeviceModule {
   ReceiptPicker receipts(
     FilePickerReceiptPicker real,
     SimulatedReceiptPicker simulated,
+  ) => AppConfig.simulateDevice ? simulated : real;
+
+  @lazySingleton
+  GeocodingService geocoding(
+    PlatformGeocodingService real,
+    SimulatedGeocodingService simulated,
   ) => AppConfig.simulateDevice ? simulated : real;
 
   @lazySingleton

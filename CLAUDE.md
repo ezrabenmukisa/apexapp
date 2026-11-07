@@ -29,7 +29,7 @@ Rules:
 - DI is `get_it` + `injectable`. Run `dart run build_runner build` after adding or changing annotations.
 - Screens that load data use `LoadCubit<T>` + `LoadView` (`core/bloc/`): loading/error/retry, actions with snackbars, and silent reload when another screen publishes a change on `DataChanges` (`core/sync/`). Repositories publish after every successful write.
 - Cubits shared across tabs and full-screen pages (dashboard, inbox, site assignment, outbox, evidence draft, settings) live in `SessionScope` (`core/navigation/session_scope.dart`), rebuilt per signed-in user.
-- Device capabilities (GPS, camera, receipts picker, geocoding, permissions, FCM token) are interfaces in `core/device/device_services.dart`. GPS (`geolocator`), camera (`image_picker`: the phone's camera app, camera only, never the gallery), receipts (`file_picker`, images and PDFs) and permissions (`permission_handler`) are real (`core/device/real_device_services.dart`). Captured and picked files are copied into app storage (`MediaStore`) so they survive in the outbox. `core/di/device_module.dart` switches to the simulations when `SIMULATE_DEVICE=true` (tests always do). Geocoding and the FCM token are still simulated.
+- Device capabilities (GPS, camera, receipts picker, geocoding, permissions, FCM token) are interfaces in `core/device/device_services.dart`. GPS (`geolocator`), camera (`image_picker`: the phone's camera app, camera only, never the gallery), receipts (`file_picker`, images and PDFs) and permissions (`permission_handler`) are real (`core/device/real_device_services.dart`). Captured and picked files are copied into app storage (`MediaStore`) so they survive in the outbox. `core/di/device_module.dart` switches to the simulations when `SIMULATE_DEVICE=true` (tests always do). Geocoding uses the phone's own geocoder (`geocoding`, `PlatformGeocodingService`: no key or billing); the FCM token is still simulated. Real implementations must not touch platform plugins in their constructors: the module builds both variants before choosing.
 
 ## Material: `material_ui`, not `flutter/material`
 
@@ -52,6 +52,7 @@ Configuration lives in a gitignored `.env` (loaded with `flutter_dotenv` in `App
 |---|---|
 | `API_BASE_URL` | Apex API including `/api/v1` (dev: `https://apex.pntr.dev/api/v1`; laptop backend from the Android emulator: `http://10.0.2.2:8000/api/v1`) |
 | `LIVE_PROJECTS`, `LIVE_MILESTONES`, `LIVE_EVIDENCE`, `LIVE_NOTIFICATIONS` | `true` = that feature calls the real API; `false` = in-app mock server |
+| `GOOGLE_MAPS_API_KEY` | Google Maps key. Android: `app/build.gradle.kts` reads it from `.env` into the manifest at build time. iOS: `MapsKey.register()` passes it to `AppDelegate` over the `apex/maps` channel at start-up |
 | `SIMULATE_DEVICE` | `true` = fake GPS, camera, receipt picker and permissions (desktop, demos); `false` on phones |
 
 **Auth and profile are always live** (`POST /auth/firebase`, `GET`/`PATCH /users/me`); they have no mock.
@@ -83,6 +84,11 @@ An owner's invite emails `https://apex.pntr.dev/invite?token=…`. Android opens
 All live, through the shared Dio, so every call is logged by `LoggingInterceptor`.
 - A milestone's badge combines the API's milestone status with its latest evidence status (`MilestoneModel.displayStatus`; rules in `docs/api-assumptions.md`). That's why milestone reads also call `GET /milestones/{id}/evidence`.
 - Evidence submission: get `upload-urls`, `PUT` each file to S3 (`Options.extra[AuthInterceptor.skipAuthKey] = true`, so no Firebase token is sent), then `POST` JSON with the file keys.
+
+## Site pin and documents
+
+- **Site pin:** `LocationPickerPage` (`/location-picker`, `extra: SiteLocation?`) is a full-screen Google map. The pin is fixed at the map centre: pan, tap a spot, search an address (forward geocoding) or use GPS, and the address under the pin is reverse-geocoded when the map stops. It pops with a `SiteLocation`. The form shows a lite-mode preview (`SitePinMap`). With `SIMULATE_DEVICE=true`, `SiteMapView` draws a placeholder instead of a native map.
+- **Receipts and other documents:** `DocumentViewerPage` (`/document`, `extra: DocumentRef`) renders PDFs with `pdfx` (the phone's own PDF engine, so `flutter test` needs no native toolchain) and images zoomable, with Share (`share_plus`) and Save to device (`FilePicker.saveFile`) as secondary actions. `DocumentCache` downloads API links once into the temp folder through the shared Dio **without** the Firebase token (`AuthInterceptor.skipAuthKey`), keyed by URL path so fresh presigned links reuse the file.
 
 ## Design system
 

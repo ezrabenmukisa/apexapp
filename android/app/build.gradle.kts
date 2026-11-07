@@ -20,6 +20,14 @@ val keyProperties = Properties().apply {
 
 fun keyProperty(name: String): String? = keyProperties.getProperty(name)
 
+// The Google Maps key comes from the app's gitignored `.env`
+// (GOOGLE_MAPS_API_KEY=...), the same file the Dart code reads, so it is
+// never committed. Without it maps render blank but the app still builds.
+val dotEnv = Properties().apply {
+    val file = rootProject.file("../.env")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
 android {
     namespace = "com.apex.app"
     compileSdk = flutter.compileSdkVersion
@@ -40,6 +48,8 @@ android {
         versionName = flutter.versionName
     }
 
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] =
+            dotEnv.getProperty("GOOGLE_MAPS_API_KEY", "")
     signingConfigs {
         // Shared team debug key: one SHA-1/SHA-256 registered in Firebase.
         keyProperty("debugStoreFile")?.let { path ->
