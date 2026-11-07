@@ -9,6 +9,7 @@ import 'core/config/app_config.dart';
 import 'core/di/injection.dart';
 import 'core/logging/app_bloc_observer.dart';
 import 'core/logging/app_logger.dart';
+import 'core/maps/maps_key.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -23,6 +24,7 @@ Future<void> main() async {
   }
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await configureDependencies();
+  await MapsKey.register();
   appLogger.i(
     'Apex started · API ${AppConfig.apiBaseUrl} · live: ${AppConfig.live}',
   );

@@ -4,23 +4,21 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/formatters.dart';
+import 'site_map_view.dart';
 
-/// Site pin preview. A stand-in for the Google Maps pin-drop (issue #2):
-/// shows the pin and its coordinates; tapping drops it at the phone's
-/// position.
+/// Site pin on the project form: a small map preview of the pin, or an
+/// invitation to choose one. Tapping opens the full-screen map picker.
 class SitePinMap extends StatelessWidget {
   const SitePinMap({
     super.key,
     required this.latitude,
     required this.longitude,
-    required this.onDropPin,
-    this.locating = false,
+    required this.onTap,
   });
 
   final double? latitude;
   final double? longitude;
-  final VoidCallback onDropPin;
-  final bool locating;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -28,42 +26,59 @@ class SitePinMap extends StatelessWidget {
     return Semantics(
       button: true,
       label: hasPin
-          ? 'Site pin at ${Formatters.coordinates(latitude!, longitude!)}. Tap to move it to your location.'
-          : 'Drop the site pin at your location',
+          ? 'Site pin at ${Formatters.coordinates(latitude!, longitude!)}. Tap to change it on the map.'
+          : 'Choose the site location on a map',
       excludeSemantics: true,
-      child: Material(
-        color: const Color(0xFFEFE6D6),
-        shape: RoundedRectangleBorder(
-          side: const BorderSide(color: AppColors.controlBorder),
-          borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: locating ? null : onDropPin,
-          child: SizedBox(
-            height: 96,
-            child: Stack(
-              children: [
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
+        child: Container(
+          height: 140,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEFE6D6),
+            border: Border.all(color: AppColors.controlBorder),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
+          ),
+          child: Stack(
+            children: [
+              if (hasPin)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: SiteMapView(
+                      initialTarget: (
+                        latitude: latitude!,
+                        longitude: longitude!,
+                      ),
+                      interactive: false,
+                    ),
+                  ),
+                )
+              else
                 const Positioned.fill(
-                  child: CustomPaint(painter: _RoadsPainter()),
+                  child: CustomPaint(painter: SimulatedMapPainter()),
                 ),
-                if (locating)
-                  const Center(
-                    child: SizedBox.square(
-                      dimension: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+              if (hasPin)
+                const IgnorePointer(
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: 32),
+                      child: Icon(
+                        Icons.location_on,
+                        color: AppColors.laterite,
+                        size: 32,
+                      ),
                     ),
-                  )
-                else if (hasPin)
-                  const Center(
-                    child: Icon(
-                      Icons.location_on,
-                      color: AppColors.laterite,
-                      size: 32,
-                    ),
-                  )
-                else
-                  Center(
+                  ),
+                ),
+              // Taps go to the picker, not the preview map.
+              Positioned.fill(
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: InkWell(onTap: onTap),
+                ),
+              ),
+              if (!hasPin)
+                Center(
+                  child: IgnorePointer(
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -79,11 +94,11 @@ class SitePinMap extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.my_location, size: 16),
+                          const Icon(Icons.map_outlined, size: 16),
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
-                              'Drop pin at my location',
+                              'Choose on map',
                               overflow: TextOverflow.ellipsis,
                               style: AppTextStyles.label,
                             ),
@@ -92,10 +107,12 @@ class SitePinMap extends StatelessWidget {
                       ),
                     ),
                   ),
-                if (hasPin)
-                  Positioned(
-                    left: 8,
-                    bottom: 8,
+                )
+              else ...[
+                Positioned(
+                  left: 8,
+                  bottom: 8,
+                  child: IgnorePointer(
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
@@ -112,44 +129,37 @@ class SitePinMap extends StatelessWidget {
                       ),
                     ),
                   ),
+                ),
+                Positioned(
+                  right: 8,
+                  bottom: 8,
+                  child: IgnorePointer(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusChip,
+                        ),
+                        border: Border.all(color: AppColors.ink),
+                      ),
+                      child: Text(
+                        'Change',
+                        style: AppTextStyles.small.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ],
-            ),
+            ],
           ),
         ),
       ),
     );
   }
-}
-
-class _RoadsPainter extends CustomPainter {
-  const _RoadsPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final road = Paint()
-      ..color = const Color(0xFFDCCFB9)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 6
-      ..strokeCap = StrokeCap.round;
-    canvas
-      ..drawPath(
-        Path()
-          ..moveTo(0, size.height * 0.75)
-          ..quadraticBezierTo(
-            size.width * 0.4,
-            size.height * 0.45,
-            size.width,
-            size.height * 0.62,
-          ),
-        road,
-      )
-      ..drawLine(
-        Offset(size.width * 0.2, 0),
-        Offset(size.width * 0.32, size.height),
-        road..strokeWidth = 4,
-      );
-  }
-
-  @override
-  bool shouldRepaint(_RoadsPainter oldDelegate) => false;
 }
