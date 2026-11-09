@@ -14,6 +14,7 @@ import '../../../../core/widgets/labeled_field.dart';
 import '../../../../core/widgets/onboarding_scaffold.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../domain/entities/project.dart';
+import '../../domain/entities/site_location.dart';
 import '../../domain/entities/project_overview.dart';
 import '../bloc/project_cubits.dart';
 import '../widgets/site_pin_map.dart';
@@ -84,6 +85,27 @@ class _ProjectFormState extends State<_ProjectForm> {
     super.dispose();
   }
 
+  /// The last address the map filled in, so it only overwrites the field
+  /// when a new pin is chosen.
+  String? _lastSuggestion;
+
+  Future<void> _pickLocation(ProjectFormState state) async {
+    final cubit = context.read<ProjectFormCubit>();
+    final picked = await context.push<SiteLocation>(
+      AppRoutes.locationPicker,
+      extra: state.hasPin
+          ? SiteLocation(
+              latitude: state.latitude!,
+              longitude: state.longitude!,
+              address: _address.text.trim().isEmpty
+                  ? null
+                  : _address.text.trim(),
+            )
+          : null,
+    );
+    if (picked != null) cubit.pinPicked(picked);
+  }
+
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     context.read<ProjectFormCubit>().submit(
@@ -100,9 +122,10 @@ class _ProjectFormState extends State<_ProjectForm> {
       BlocConsumer<ProjectFormCubit, ProjectFormState>(
         listener: (context, state) {
           if (state.error != null) context.showMessage(state.error!);
+          // A newly picked pin brings its address; the owner can still edit.
           if (state.suggestedAddress != null &&
-              state.suggestedAddress != _address.text &&
-              _address.text.isEmpty) {
+              state.suggestedAddress != _lastSuggestion) {
+            _lastSuggestion = state.suggestedAddress;
             _address.text = state.suggestedAddress!;
           }
           if (state.status == ProjectFormStatus.saved) {
@@ -145,8 +168,7 @@ class _ProjectFormState extends State<_ProjectForm> {
               child: SitePinMap(
                 latitude: state.latitude,
                 longitude: state.longitude,
-                locating: state.status == ProjectFormStatus.locating,
-                onDropPin: cubit.dropPinHere,
+                onTap: () => _pickLocation(state),
               ),
             ),
             LabeledField(

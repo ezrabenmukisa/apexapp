@@ -16,6 +16,7 @@ import 'package:app/core/device/real_device_services.dart' as _i346;
 import 'package:app/core/di/data_source_module.dart' as _i1066;
 import 'package:app/core/di/device_module.dart' as _i1013;
 import 'package:app/core/di/register_module.dart' as _i313;
+import 'package:app/core/files/documents.dart' as _i522;
 import 'package:app/core/mock/mock_api_server.dart' as _i664;
 import 'package:app/core/router/pending_invite.dart' as _i35;
 import 'package:app/core/sync/data_changes.dart' as _i833;
@@ -67,6 +68,8 @@ import 'package:app/features/evidence/domain/repositories/evidence_repository.da
     as _i849;
 import 'package:app/features/evidence/domain/usecases/evidence_usecases.dart'
     as _i31;
+import 'package:app/features/evidence/presentation/bloc/document_viewer_cubit.dart'
+    as _i279;
 import 'package:app/features/evidence/presentation/bloc/evidence_cubits.dart'
     as _i283;
 import 'package:app/features/milestones/data/datasources/milestones_data_source.dart'
@@ -99,6 +102,8 @@ import 'package:app/features/projects/domain/usecases/project_usecases.dart'
     as _i314;
 import 'package:app/features/projects/presentation/bloc/accept_invite_cubit.dart'
     as _i192;
+import 'package:app/features/projects/presentation/bloc/location_picker_cubit.dart'
+    as _i60;
 import 'package:app/features/projects/presentation/bloc/project_cubits.dart'
     as _i870;
 import 'package:dio/dio.dart' as _i361;
@@ -133,6 +138,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i62.SimulatedReceiptPicker>(
       () => _i62.SimulatedReceiptPicker(),
     );
+    gh.lazySingleton<_i62.SimulatedGeocodingService>(
+      () => _i62.SimulatedGeocodingService(),
+    );
     gh.lazySingleton<_i62.SimulatedPermissionsService>(
       () => _i62.SimulatedPermissionsService(),
     );
@@ -142,12 +150,16 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i346.HandlerPermissionsService>(
       () => _i346.HandlerPermissionsService(),
     );
+    gh.lazySingleton<_i346.PlatformGeocodingService>(
+      () => _i346.PlatformGeocodingService(),
+    );
     gh.lazySingleton<_i59.FirebaseAuth>(() => registerModule.firebaseAuth);
     gh.lazySingleton<_i116.GoogleSignIn>(() => registerModule.googleSignIn);
     gh.lazySingleton<_i183.ImagePicker>(() => registerModule.imagePicker);
     gh.lazySingleton<_i558.FlutterSecureStorage>(
       () => registerModule.secureStorage,
     );
+    gh.lazySingleton<_i522.DocumentActions>(() => _i522.DocumentActions());
     gh.lazySingleton<_i35.PendingInvite>(() => _i35.PendingInvite());
     gh.lazySingleton<_i833.DataChanges>(
       () => _i833.DataChanges(),
@@ -172,7 +184,10 @@ extension GetItInjectableX on _i174.GetIt {
       ),
     );
     gh.lazySingleton<_i62.GeocodingService>(
-      () => _i62.SimulatedGeocodingService(),
+      () => deviceModule.geocoding(
+        gh<_i346.PlatformGeocodingService>(),
+        gh<_i62.SimulatedGeocodingService>(),
+      ),
     );
     gh.lazySingleton<_i818.SessionLocalDataSource>(
       () => _i818.SessionLocalDataSource(gh<_i558.FlutterSecureStorage>()),
@@ -184,6 +199,12 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i19.PermissionsCubit(gh<_i62.PermissionsService>()),
     );
     gh.lazySingleton<_i346.MediaStore>(() => _i346.AppMediaStore());
+    gh.factory<_i60.LocationPickerCubit>(
+      () => _i60.LocationPickerCubit(
+        gh<_i62.LocationService>(),
+        gh<_i62.GeocodingService>(),
+      ),
+    );
     gh.lazySingleton<_i346.PickerCaptureService>(
       () => _i346.PickerCaptureService(
         gh<_i62.LocationService>(),
@@ -239,6 +260,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i491.AuthApiDataSource>(),
         gh<_i818.SessionLocalDataSource>(),
       ),
+    );
+    gh.lazySingleton<_i522.DocumentCache>(
+      () => _i522.DocumentCache(gh<_i361.Dio>()),
     );
     gh.lazySingleton<_i438.EvidenceDataSourceRemote>(
       () => _i438.EvidenceDataSourceRemote(gh<_i361.Dio>()),
@@ -299,6 +323,13 @@ extension GetItInjectableX on _i174.GetIt {
       () => dataSourceModule.notifications(
         gh<_i584.NotificationsDataSourceRemote>(),
         gh<_i584.NotificationsDataSourceMock>(),
+      ),
+    );
+    gh.factoryParam<_i279.DocumentViewerCubit, _i522.DocumentRef?, dynamic>(
+      (doc, _) => _i279.DocumentViewerCubit(
+        doc,
+        gh<_i522.DocumentCache>(),
+        gh<_i522.DocumentActions>(),
       ),
     );
     gh.factory<_i72.WatchAuthIdentity>(
@@ -411,14 +442,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i833.DataChanges>(),
       ),
     );
-    gh.factory<_i870.ProjectFormCubit>(
-      () => _i870.ProjectFormCubit(
-        gh<_i314.CreateProject>(),
-        gh<_i314.UpdateProject>(),
-        gh<_i62.LocationService>(),
-        gh<_i62.GeocodingService>(),
-      ),
-    );
     gh.lazySingleton<_i849.OutboxRepository>(
       () => _i272.OutboxRepositoryImpl(
         gh<_i378.OutboxLocalDataSource>(),
@@ -457,6 +480,12 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i31.EnqueueEvidence>(
       () => _i31.EnqueueEvidence(gh<_i849.OutboxRepository>()),
+    );
+    gh.factory<_i870.ProjectFormCubit>(
+      () => _i870.ProjectFormCubit(
+        gh<_i314.CreateProject>(),
+        gh<_i314.UpdateProject>(),
+      ),
     );
     gh.factory<_i838.ListNotifications>(
       () => _i838.ListNotifications(gh<_i820.NotificationsRepository>()),

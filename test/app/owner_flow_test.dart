@@ -73,6 +73,11 @@ void main() {
     await AppHarness.tap(tester, find.text('Account'));
     expect(find.text('Sarah Namuli'), findsOneWidget);
     expect(find.text('Sign out'), findsOneWidget);
+
+    // Signing out leaves the shell (still animating out) without a
+    // missing-provider crash and lands on Welcome.
+    await AppHarness.tap(tester, find.text('Sign out'));
+    expect(find.text('Get started'), findsOneWidget);
   });
 
   testWidgets('owner: create project → milestones → add site manager', (
@@ -85,8 +90,26 @@ void main() {
     expect(find.text('STEP 3 OF 5'), findsOneWidget);
 
     await tester.enterText(find.byType(TextFormField).first, 'Rental units');
-    await AppHarness.tap(tester, find.text('Drop pin at my location'));
-    expect(find.textContaining('Wakiso'), findsWidgets);
+    // Site pin: open the map picker, which centres on the phone's position
+    // and looks up the address under the pin.
+    await AppHarness.tap(tester, find.text('Choose on map'));
+    expect(find.text('Project location'), findsOneWidget);
+    expect(find.text('Wakiso, near Nansana trading centre'), findsOneWidget);
+
+    // Search moves the pin and re-reads the address.
+    await tester.enterText(find.byType(TextField).first, 'Nansana');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await AppHarness.settle(tester);
+    expect(find.textContaining('0.40541 N'), findsOneWidget);
+
+    await AppHarness.tap(tester, find.text('Confirm location'));
+    expect(find.text('STEP 3 OF 5'), findsOneWidget);
+    expect(
+      find.widgetWithText(TextFormField, 'Wakiso, near Nansana trading centre'),
+      findsOneWidget,
+      reason: 'the picked address fills the Address field',
+    );
+    expect(find.text('Change'), findsOneWidget);
     await AppHarness.tap(tester, find.text('Create project'));
 
     // 15 (step 4): empty plan → template.
@@ -110,5 +133,22 @@ void main() {
 
     await AppHarness.tap(tester, find.text('Finish setup'));
     expect(find.text('Rental units'), findsWidgets);
+  });
+
+  testWidgets('owner: tapping a receipt opens it in the app', (tester) async {
+    final app = AppHarness(role: 'OWNER');
+    await app.start(tester);
+
+    await AppHarness.tap(tester, find.widgetWithText(FilledButton, 'Review'));
+    await AppHarness.tap(tester, find.text('bricks-invoice.pdf'));
+
+    // The viewer opens with its share/save actions. The mock server's
+    // receipts are sample data, so it explains there's no real file.
+    expect(find.byTooltip('Share'), findsOneWidget);
+    expect(find.byTooltip('Save to device'), findsOneWidget);
+    expect(find.textContaining('sample data'), findsOneWidget);
+
+    await AppHarness.tap(tester, find.byTooltip('Close'));
+    expect(find.text('Approve Walling'), findsOneWidget);
   });
 }

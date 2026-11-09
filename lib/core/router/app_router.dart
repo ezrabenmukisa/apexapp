@@ -16,6 +16,7 @@ import '../../features/auth/presentation/pages/sign_in_options_page.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/pages/welcome_page.dart';
 import '../../features/evidence/presentation/pages/capture_page.dart';
+import '../../features/evidence/presentation/pages/document_viewer_page.dart';
 import '../../features/evidence/presentation/pages/queue_page.dart';
 import '../../features/evidence/presentation/pages/review_evidence_page.dart';
 import '../../features/evidence/presentation/pages/site_today_page.dart';
@@ -24,11 +25,14 @@ import '../../features/milestones/presentation/pages/edit_milestone_page.dart';
 import '../../features/milestones/presentation/pages/milestone_plan_page.dart';
 import '../../features/notifications/presentation/pages/inbox_page.dart';
 import '../../features/projects/presentation/pages/accept_invite_page.dart';
+import '../../features/projects/domain/entities/site_location.dart';
 import '../../features/projects/presentation/pages/add_site_manager_page.dart';
+import '../../features/projects/presentation/pages/location_picker_page.dart';
 import '../../features/projects/presentation/pages/project_detail_page.dart';
 import '../../features/projects/presentation/pages/project_form_page.dart';
 import '../../features/projects/presentation/pages/project_settings_page.dart';
 import '../../features/projects/presentation/pages/projects_page.dart';
+import '../files/documents.dart';
 import '../navigation/main_shell.dart';
 import 'app_routes.dart';
 import 'auth_redirect.dart';
@@ -38,56 +42,67 @@ final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
 GoRouter createAppRouter(AuthBloc authBloc, PendingInvite pendingInvite) =>
     GoRouter(
-  navigatorKey: _rootKey,
-  initialLocation: AppRoutes.splash,
-  refreshListenable: _StreamListenable(authBloc.stream),
-  redirect: (context, routerState) {
-    // Hold an invite link's token so it survives signing in first. Once
-    // signed in, the invite page takes the token straight from the URL.
-    if (routerState.matchedLocation == AppRoutes.invite &&
-        authBloc.state.status != AuthStatus.authenticated) {
-      final token = routerState.uri.queryParameters['token'];
-      if (token != null && token.isNotEmpty) pendingInvite.token = token;
-    }
-    return authRedirect(
-      authBloc.state,
-      routerState.matchedLocation,
-      pendingInvite: pendingInvite.token,
-    );
-  },
-  routes: [
-    GoRoute(path: AppRoutes.splash, builder: (_, _) => const SplashPage()),
-    GoRoute(path: AppRoutes.welcome, builder: (_, _) => const WelcomePage()),
-    GoRoute(
-      path: AppRoutes.signIn,
-      builder: (_, _) => const SignInOptionsPage(),
+      navigatorKey: _rootKey,
+      initialLocation: AppRoutes.splash,
+      refreshListenable: _StreamListenable(authBloc.stream),
+      redirect: (context, routerState) {
+        // Hold an invite link's token so it survives signing in first. Once
+        // signed in, the invite page takes the token straight from the URL.
+        if (routerState.matchedLocation == AppRoutes.invite &&
+            authBloc.state.status != AuthStatus.authenticated) {
+          final token = routerState.uri.queryParameters['token'];
+          if (token != null && token.isNotEmpty) pendingInvite.token = token;
+        }
+        return authRedirect(
+          authBloc.state,
+          routerState.matchedLocation,
+          pendingInvite: pendingInvite.token,
+        );
+      },
       routes: [
-        GoRoute(path: 'phone', builder: (_, _) => const PhoneSignInPage()),
-        GoRoute(path: 'email', builder: (_, _) => const EmailSignInPage()),
+        GoRoute(path: AppRoutes.splash, builder: (_, _) => const SplashPage()),
+        GoRoute(
+          path: AppRoutes.welcome,
+          builder: (_, _) => const WelcomePage(),
+        ),
+        GoRoute(
+          path: AppRoutes.signIn,
+          builder: (_, _) => const SignInOptionsPage(),
+          routes: [
+            GoRoute(path: 'phone', builder: (_, _) => const PhoneSignInPage()),
+            GoRoute(path: 'email', builder: (_, _) => const EmailSignInPage()),
+          ],
+        ),
+        GoRoute(
+          path: AppRoutes.completeProfile,
+          builder: (_, _) => const CompleteProfilePage(),
+        ),
+        GoRoute(
+          path: AppRoutes.sessionError,
+          builder: (_, _) => const SessionErrorPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.editProfile,
+          builder: (_, _) => const EditProfilePage(),
+        ),
+        GoRoute(
+          path: AppRoutes.locationPicker,
+          builder: (_, s) =>
+              LocationPickerPage(initial: s.extra as SiteLocation?),
+        ),
+        GoRoute(
+          path: AppRoutes.document,
+          builder: (_, s) => DocumentViewerPage(doc: s.extra! as DocumentRef),
+        ),
+        GoRoute(
+          path: AppRoutes.invite,
+          builder: (_, state) =>
+              AcceptInvitePage(token: state.uri.queryParameters['token'] ?? ''),
+        ),
+        ..._ownerRoutes,
+        ..._siteRoutes,
       ],
-    ),
-    GoRoute(
-      path: AppRoutes.completeProfile,
-      builder: (_, _) => const CompleteProfilePage(),
-    ),
-    GoRoute(
-      path: AppRoutes.sessionError,
-      builder: (_, _) => const SessionErrorPage(),
-    ),
-    GoRoute(
-      path: AppRoutes.editProfile,
-      builder: (_, _) => const EditProfilePage(),
-    ),
-    GoRoute(
-      path: AppRoutes.invite,
-      builder: (_, state) => AcceptInvitePage(
-        token: state.uri.queryParameters['token'] ?? '',
-      ),
-    ),
-    ..._ownerRoutes,
-    ..._siteRoutes,
-  ],
-);
+    );
 
 String _param(GoRouterState s, String name) => s.pathParameters[name]!;
 bool _setup(GoRouterState s) => s.uri.queryParameters['setup'] == '1';

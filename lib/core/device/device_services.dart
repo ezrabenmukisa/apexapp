@@ -42,9 +42,16 @@ abstract interface class ReceiptPicker {
   Future<ReceiptFile?> pick();
 }
 
-/// Pin coordinates → human-readable address for `location_name`.
+/// A point on the map.
+typedef LatLngPoint = ({double latitude, double longitude});
+
+/// Pin coordinates ↔ human-readable addresses (`location_name`).
 abstract interface class GeocodingService {
+  /// Best address for a point; throws [DeviceException] if none.
   Future<String> reverseGeocode(double latitude, double longitude);
+
+  /// Best match for a typed address or place name, or null if none.
+  Future<LatLngPoint?> forwardGeocode(String query);
 }
 
 enum DevicePermission { location, camera, notifications }
@@ -142,12 +149,20 @@ class SimulatedReceiptPicker implements ReceiptPicker {
   }
 }
 
-@LazySingleton(as: GeocodingService)
+@lazySingleton
 class SimulatedGeocodingService implements GeocodingService {
   @override
   Future<String> reverseGeocode(double latitude, double longitude) async {
     await Future<void>.delayed(const Duration(milliseconds: 400));
     return 'Wakiso, near Nansana trading centre';
+  }
+
+  @override
+  Future<LatLngPoint?> forwardGeocode(String query) async {
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    return query.trim().isEmpty
+        ? null
+        : (latitude: _siteLat + 0.001, longitude: _siteLng + 0.001);
   }
 }
 

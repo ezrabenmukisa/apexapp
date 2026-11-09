@@ -11,6 +11,7 @@ Flutter app for remotely funded building projects: owners plan milestones and re
    ```
    `.env` is gitignored. Its keys:
    - **`API_BASE_URL`**: the Apex API. Defaults in `.env.example` to `https://apex.pntr.dev/api/v1`.
+   - **`GOOGLE_MAPS_API_KEY`**: Google Maps key for the project site-pin map (Maps SDK for Android, and iOS if you build for iPhone). Android reads it at build time, so rebuild after changing it. Without it the map is blank.
    - **`LIVE_PROJECTS`**, **`LIVE_MILESTONES`**, **`LIVE_EVIDENCE`**, **`LIVE_NOTIFICATIONS`**: set one to `true` once its backend endpoint exists. Until then that feature runs on the in-app mock server.
 3. Android signing and Firebase: see [docs/firebase-setup.md](docs/firebase-setup.md).
 4. Run:

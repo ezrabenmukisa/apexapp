@@ -35,12 +35,21 @@ class LoggingInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     final options = err.requestOptions;
-    appLogger.w(
-      '✕ ${err.response?.statusCode ?? err.type.name} ${options.method} '
-      '${url(options.uri)} (${_elapsed(options)})'
-      '${err.response?.data == null ? '' : '\n${describe(err.response?.data)}'}',
-      error: err.message,
-    );
+    final response = err.response;
+    final line =
+        '✕ ${response?.statusCode ?? err.type.name} ${options.method} '
+        '${url(options.uri)} (${_elapsed(options)})';
+    if (response != null) {
+      // The server answered (e.g. 404 "No evidence submitted for this
+      // milestone"): often expected and handled by the caller, so one
+      // compact line with the body, without Dio's long explanation.
+      appLogger.i(
+        '$line${response.data == null ? '' : '\n${describe(response.data)}'}',
+      );
+    } else {
+      // No answer at all: timeout, offline, TLS.
+      appLogger.w('$line\n${err.error ?? err.message}');
+    }
     handler.next(err);
   }
 

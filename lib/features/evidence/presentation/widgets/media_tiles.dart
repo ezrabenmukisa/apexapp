@@ -150,21 +150,34 @@ class MediaTile extends StatelessWidget {
 
 /// Receipt chip: PDF badge or image icon, with the file name.
 class ReceiptChip extends StatelessWidget {
-  const ReceiptChip({super.key, required this.name, this.onRemove});
+  const ReceiptChip({super.key, required this.name, this.onTap, this.onRemove});
 
   final String name;
+
+  /// Opens the receipt in the in-app viewer.
+  final VoidCallback? onTap;
   final VoidCallback? onRemove;
 
   bool get _isPdf => name.toLowerCase().endsWith('.pdf');
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
-    decoration: BoxDecoration(
+  Widget build(BuildContext context) => Semantics(
+    button: onTap != null,
+    label: onTap == null ? null : 'Open receipt $name',
+    child: Material(
       color: AppColors.surface,
-      border: Border.all(color: AppColors.controlBorder),
-      borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
+      shape: RoundedRectangleBorder(
+        side: const BorderSide(color: AppColors.controlBorder),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(onTap: onTap, child: _content()),
     ),
+  );
+
+  Widget _content() => Container(
+    padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
+    constraints: const BoxConstraints(minHeight: 40),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:injectable/injectable.dart';
@@ -208,5 +209,62 @@ class HandlerPermissionsService implements PermissionsService {
     final status = await _of(permission).request();
     if (status.isPermanentlyDenied) await openAppSettings();
     return _state(status);
+  }
+}
+
+/// The phone's own geocoder (Android Geocoder / Apple CLGeocoder): no API
+/// key or billing, works for Ugandan addresses, may be coarse in rural areas
+/// — which is why the address field stays editable.
+@lazySingleton
+class PlatformGeocodingService implements GeocodingService {
+  /// Created on first use: DI builds this even when `SIMULATE_DEVICE=true`
+  /// picks the simulation, and there may be no native geocoder (tests).
+  late final Geocoding _geocoding = Geocoding();
+
+  @override
+  Future<String> reverseGeocode(double latitude, double longitude) async {
+    final List<Placemark> places;
+    try {
+      places = await _geocoding.placemarkFromCoordinates(latitude, longitude);
+    } catch (e) {
+      throw DeviceException('Couldn\'t look up an address here ($e).');
+    }
+    for (final p in places) {
+      final address = formatPlacemark(p);
+      if (address.isNotEmpty) return address;
+    }
+    throw const DeviceException('No address found for this spot.');
+  }
+
+  @override
+  Future<LatLngPoint?> forwardGeocode(String query) async {
+    if (query.trim().isEmpty) return null;
+    try {
+      final found = await _geocoding.locationFromAddress(query.trim());
+      if (found.isEmpty) return null;
+      return (latitude: found.first.latitude, longitude: found.first.longitude);
+    } catch (_) {
+      // "No results" is reported as an exception by the platform geocoder.
+      return null;
+    }
+  }
+
+  /// "Plot 12 Speke Rd, Nakasero, Kampala, Uganda": street, area, town,
+  /// country, skipping blanks and repeats.
+  static String formatPlacemark(Placemark p) {
+    final parts = <String>[];
+    for (final part in [
+      p.street ?? p.thoroughfare,
+      p.subLocality,
+      p.locality ?? p.subAdministrativeArea,
+      p.country,
+    ]) {
+      final value = part?.trim() ?? '';
+      if (value.isEmpty || parts.contains(value)) continue;
+      // Android sometimes returns a bare plus code as the "street".
+      if (RegExp(r'^[23456789CFGHJMPQRVWX]{4,}\+').hasMatch(value)) continue;
+      parts.add(value);
+    }
+    return parts.join(', ');
   }
 }
