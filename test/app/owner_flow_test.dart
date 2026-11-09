@@ -73,6 +73,11 @@ void main() {
     await AppHarness.tap(tester, find.text('Account'));
     expect(find.text('Sarah Namuli'), findsOneWidget);
     expect(find.text('Sign out'), findsOneWidget);
+
+    // Signing out leaves the shell (still animating out) without a
+    // missing-provider crash and lands on Welcome.
+    await AppHarness.tap(tester, find.text('Sign out'));
+    expect(find.text('Get started'), findsOneWidget);
   });
 
   testWidgets('owner: create project → milestones → add site manager', (

@@ -139,9 +139,24 @@ class AppHarness {
     when(() => user.displayName).thenReturn(null);
     when(() => user.getIdToken(any())).thenAnswer((_) async => 'token');
     when(() => user.getIdToken()).thenAnswer((_) async => 'token');
+    // Like Firebase: authStateChanges replays the current user, then
+    // follows sign-out.
+    User? current = user;
+    final changes = StreamController<User?>.broadcast();
+    addTearDown(changes.close);
     final auth = _FakeAuth();
-    when(() => auth.currentUser).thenReturn(user);
-    when(() => auth.authStateChanges()).thenAnswer((_) => Stream.value(user));
+    when(() => auth.currentUser).thenAnswer((_) => current);
+    when(() => auth.authStateChanges()).thenAnswer(
+      (_) => Stream.multi((out) {
+        out.add(current);
+        final sub = changes.stream.listen(out.add);
+        out.onCancel = sub.cancel;
+      }),
+    );
+    when(() => auth.signOut()).thenAnswer((_) async {
+      current = null;
+      changes.add(null);
+    });
 
     await getIt.reset();
     await configureDependencies();

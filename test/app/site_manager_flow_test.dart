@@ -75,6 +75,11 @@ void main() {
     expect(find.text('DATA & SYNC'), findsOneWidget);
     expect(find.text('0 PENDING'), findsOneWidget);
     expect(find.text('Sign out'), findsOneWidget);
+
+    // Signing out leaves the shell (still animating out) without a
+    // missing-provider crash and lands on Welcome.
+    await AppHarness.tap(tester, find.text('Sign out'));
+    expect(find.text('Get started'), findsOneWidget);
   });
 
   testWidgets('video waits for Wi-Fi when "Wi-Fi only" is on', (tester) async {
