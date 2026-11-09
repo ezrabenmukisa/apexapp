@@ -46,10 +46,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-    }
-
         manifestPlaceholders["GOOGLE_MAPS_API_KEY"] =
             dotEnv.getProperty("GOOGLE_MAPS_API_KEY", "")
+    }
+
     signingConfigs {
         // Shared team debug key: one SHA-1/SHA-256 registered in Firebase.
         keyProperty("debugStoreFile")?.let { path ->
