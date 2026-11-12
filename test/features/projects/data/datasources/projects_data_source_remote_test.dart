@@ -98,10 +98,7 @@ void main() {
       final projectId = await remoteFor(adapter).acceptInvitation('tok-123');
 
       expect(adapter.last!.method, 'POST');
-      expect(
-        adapter.last!.uri.path,
-        '/api/v1/projects/invitations/accept',
-      );
+      expect(adapter.last!.uri.path, '/api/v1/projects/invitations/accept');
       expect(adapter.last!.data, {'token': 'tok-123'});
       expect(projectId, 'prj-9');
     });

@@ -87,11 +87,7 @@ void main() {
           AppRoutes.completeProfile,
         );
         expect(
-          authRedirect(
-            owner,
-            AppRoutes.completeProfile,
-            pendingInvite: token,
-          ),
+          authRedirect(owner, AppRoutes.completeProfile, pendingInvite: token),
           inviteUrl,
         );
       });

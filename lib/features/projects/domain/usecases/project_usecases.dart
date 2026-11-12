@@ -121,13 +121,8 @@ class InviteMember implements UseCase<String, InviteMemberParams> {
   final ProjectsRepository _repository;
 
   @override
-  Future<Either<Failure, String>> call(InviteMemberParams p) =>
-      _repository.inviteMember(
-        p.projectId,
-        email: p.email,
-        role: p.role,
-        note: p.note,
-      );
+  Future<Either<Failure, String>> call(InviteMemberParams p) => _repository
+      .inviteMember(p.projectId, email: p.email, role: p.role, note: p.note);
 }
 
 /// Accepts an emailed invite link's token. Returns the joined project's id.
