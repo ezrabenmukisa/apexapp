@@ -2,9 +2,10 @@ import 'package:injectable/injectable.dart';
 
 import '../config/app_config.dart';
 import '../device/device_services.dart';
+import '../device/place_search.dart';
 import '../device/real_device_services.dart';
 
-/// Real GPS, geocoding, camera, receipt picker and permissions, or the simulations
+/// Real GPS, geocoding, place suggestions, camera, receipt picker and permissions, or the simulations
 /// when `SIMULATE_DEVICE=true` (tests, desktop, quick UI demos).
 @module
 abstract class DeviceModule {
@@ -30,6 +31,12 @@ abstract class DeviceModule {
   GeocodingService geocoding(
     PlatformGeocodingService real,
     SimulatedGeocodingService simulated,
+  ) => AppConfig.simulateDevice ? simulated : real;
+
+  @lazySingleton
+  PlaceSearchService placeSearch(
+    PhotonPlaceSearch real,
+    SimulatedPlaceSearch simulated,
   ) => AppConfig.simulateDevice ? simulated : real;
 
   @lazySingleton

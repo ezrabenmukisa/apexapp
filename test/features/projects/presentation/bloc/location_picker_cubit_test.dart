@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app/core/device/device_services.dart';
+import 'package:app/core/device/place_search.dart';
 import 'package:app/features/evidence/domain/entities/evidence.dart';
 import 'package:app/features/projects/domain/entities/site_location.dart';
 import 'package:app/features/projects/presentation/bloc/location_picker_cubit.dart';
@@ -13,9 +14,12 @@ class _MockLocation extends Mock implements LocationService {}
 
 class _MockGeocoder extends Mock implements GeocodingService {}
 
+class _MockPlaces extends Mock implements PlaceSearchService {}
+
 void main() {
   late _MockLocation location;
   late _MockGeocoder geocoder;
+  late _MockPlaces places;
 
   const nakasero = (latitude: 0.3163, longitude: 32.5822);
   final fix = GeoFix(
@@ -28,9 +32,18 @@ void main() {
   setUp(() {
     location = _MockLocation();
     geocoder = _MockGeocoder();
+    places = _MockPlaces();
   });
 
-  LocationPickerCubit build() => LocationPickerCubit(location, geocoder);
+  LocationPickerCubit build() =>
+      LocationPickerCubit(location, geocoder, places);
+
+  const market = PlaceSuggestion(
+    title: 'Nakasero Market',
+    subtitle: 'Kampala, Uganda',
+    latitude: 0.3136,
+    longitude: 32.5791,
+  );
 
   group('start', () {
     test('opens on the existing pin', () async {
@@ -152,4 +165,69 @@ void main() {
       const LocationPickerState(message: 'Turn on location (GPS).'),
     ],
   );
+
+  group('suggestions', () {
+    const wait = LocationPickerCubit.suggestDelay;
+
+    blocTest<LocationPickerCubit, LocationPickerState>(
+      'typing pauses, then matches near the pin are listed',
+      build: build,
+      seed: () => const LocationPickerState(target: nakasero),
+      setUp: () => when(
+        () => places.suggest('Nakas', near: nakasero),
+      ).thenAnswer((_) async => [market]),
+      act: (cubit) => cubit
+        ..queryChanged('Na')
+        ..queryChanged('Naka')
+        ..queryChanged('Nakas'),
+      wait: wait * 2,
+      expect: () => [
+        const LocationPickerState(target: nakasero, suggesting: true),
+        const LocationPickerState(target: nakasero, suggestions: [market]),
+      ],
+      // Only the last keystroke reaches the network.
+      verify: (_) => verify(
+        () => places.suggest(any(), near: any(named: 'near')),
+      ).called(1),
+    );
+
+    blocTest<LocationPickerCubit, LocationPickerState>(
+      'too short a query clears the list',
+      build: build,
+      seed: () => const LocationPickerState(suggestions: [market]),
+      act: (cubit) => cubit.queryChanged('Na'),
+      expect: () => [const LocationPickerState()],
+    );
+
+    blocTest<LocationPickerCubit, LocationPickerState>(
+      'choosing one moves the map there and closes the list',
+      build: build,
+      seed: () => const LocationPickerState(suggestions: [market]),
+      act: (cubit) => cubit.suggestionChosen(market),
+      expect: () => [LocationPickerState(moveTo: market.point, moveSeq: 1)],
+    );
+
+    blocTest<LocationPickerCubit, LocationPickerState>(
+      'Search takes the top suggestion without the phone geocoder',
+      build: build,
+      seed: () => const LocationPickerState(suggestions: [market]),
+      act: (cubit) => cubit.search('Nakasero'),
+      expect: () => [LocationPickerState(moveTo: market.point, moveSeq: 1)],
+      verify: (_) => verifyNever(() => geocoder.forwardGeocode(any())),
+    );
+
+    test('a late answer for an old query is ignored', () async {
+      final slow = Completer<List<PlaceSuggestion>>();
+      when(
+        () => places.suggest('Nakasero', near: any(named: 'near')),
+      ).thenAnswer((_) => slow.future);
+      final cubit = build()..queryChanged('Nakasero');
+      await Future<void>.delayed(wait * 2);
+      cubit.queryChanged('Na');
+      slow.complete([market]);
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.suggestions, isEmpty);
+      await cubit.close();
+    });
+  });
 }

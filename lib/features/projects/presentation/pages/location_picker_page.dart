@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/device/device_services.dart';
+import '../../../../core/device/place_search.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -16,7 +17,8 @@ import '../bloc/location_picker_cubit.dart';
 import '../widgets/site_map_view.dart';
 
 /// Full-screen map to set the project's site pin: move the map under the
-/// pin, tap a spot, search an address or use the phone's location. Pops
+/// pin, tap a spot, search an address (with suggestions as you type) or use
+/// the phone's location. Pops
 /// with the chosen [SiteLocation].
 class LocationPickerPage extends StatelessWidget {
   const LocationPickerPage({super.key, this.initial});
@@ -62,6 +64,15 @@ class _LocationPickerViewState extends State<_LocationPickerView> {
     context.read<LocationPickerCubit>().search(_search.text);
   }
 
+  void _choose(PlaceSuggestion place) {
+    _search.value = TextEditingValue(
+      text: place.title,
+      selection: TextSelection.collapsed(offset: place.title.length),
+    );
+    FocusScope.of(context).unfocus();
+    context.read<LocationPickerCubit>().suggestionChosen(place);
+  }
+
   @override
   Widget build(BuildContext context) =>
       BlocConsumer<LocationPickerCubit, LocationPickerState>(
@@ -103,11 +114,12 @@ class _LocationPickerViewState extends State<_LocationPickerView> {
                     child: TextField(
                       controller: _search,
                       textInputAction: TextInputAction.search,
+                      onChanged: cubit.queryChanged,
                       onSubmitted: (_) => _submitSearch(),
                       decoration: InputDecoration(
                         hintText: 'Search an address, town or landmark',
                         prefixIcon: const Icon(Icons.search),
-                        suffixIcon: state.searching
+                        suffixIcon: state.searching || state.suggesting
                             ? const Padding(
                                 padding: EdgeInsets.all(14),
                                 child: SizedBox.square(
@@ -126,19 +138,40 @@ class _LocationPickerViewState extends State<_LocationPickerView> {
                     ),
                   ),
                   Expanded(
-                    child: FutureBuilder<LatLngPoint>(
-                      future: _start,
-                      builder: (context, snap) {
-                        final start = snap.data;
-                        if (start == null) return const LoadingView();
-                        return _MapArea(
-                          start: start,
-                          locating: state.locating,
-                          onCreated: (map) => _map = map,
-                          onIdle: cubit.pinMoved,
-                          onMyLocation: cubit.useMyLocation,
-                        );
-                      },
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: FutureBuilder<LatLngPoint>(
+                            future: _start,
+                            builder: (context, snap) {
+                              final start = snap.data;
+                              if (start == null) return const LoadingView();
+                              return _MapArea(
+                                start: start,
+                                locating: state.locating,
+                                onCreated: (map) => _map = map,
+                                onIdle: (point) {
+                                  // Panning or tapping the map means the
+                                  // list wasn't what they wanted.
+                                  cubit.dismissSuggestions();
+                                  cubit.pinMoved(point);
+                                },
+                                onMyLocation: cubit.useMyLocation,
+                              );
+                            },
+                          ),
+                        ),
+                        if (state.suggestions.isNotEmpty)
+                          Positioned(
+                            left: AppDimensions.screenGutter,
+                            right: AppDimensions.screenGutter,
+                            top: 0,
+                            child: _SuggestionList(
+                              places: state.suggestions,
+                              onSelected: _choose,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                   _ConfirmPanel(
@@ -151,6 +184,104 @@ class _LocationPickerViewState extends State<_LocationPickerView> {
           );
         },
       );
+}
+
+/// Dropdown of place matches under the search box, floating over the map.
+class _SuggestionList extends StatelessWidget {
+  const _SuggestionList({required this.places, required this.onSelected});
+
+  final List<PlaceSuggestion> places;
+  final ValueChanged<PlaceSuggestion> onSelected;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: AppColors.surface,
+    elevation: 4,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
+      side: const BorderSide(color: AppColors.rule),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 320),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              itemCount: places.length,
+              separatorBuilder: (_, _) =>
+                  const Divider(height: 1, color: AppColors.rule),
+              itemBuilder: (context, i) =>
+                  _SuggestionTile(place: places[i], onTap: onSelected),
+            ),
+          ),
+          // Required credit for OpenStreetMap data.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+            child: Text(
+              '© OpenStreetMap contributors',
+              textAlign: TextAlign.end,
+              style: AppTextStyles.small.copyWith(color: AppColors.ink3),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _SuggestionTile extends StatelessWidget {
+  const _SuggestionTile({required this.place, required this.onTap});
+
+  final PlaceSuggestion place;
+  final ValueChanged<PlaceSuggestion> onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: () => onTap(place),
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: AppDimensions.minTouchTarget + 8,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            const Icon(Icons.place_outlined, size: 20, color: AppColors.ink3),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    place.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.label.copyWith(color: AppColors.ink),
+                  ),
+                  if (place.subtitle.isNotEmpty)
+                    Text(
+                      place.subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.ink3,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _MapArea extends StatelessWidget {

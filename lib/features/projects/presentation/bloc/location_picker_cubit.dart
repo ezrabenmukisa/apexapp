@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 import '../../../../core/device/device_services.dart';
+import '../../../../core/device/place_search.dart';
 import '../../domain/entities/site_location.dart';
 import '../widgets/site_map_view.dart';
 
@@ -16,6 +19,8 @@ final class LocationPickerState extends Equatable {
     this.moveTo,
     this.moveSeq = 0,
     this.message,
+    this.suggestions = const [],
+    this.suggesting = false,
   });
 
   /// Where the pin is (the map centre); null until the map is ready.
@@ -32,6 +37,10 @@ final class LocationPickerState extends Equatable {
 
   /// One-shot message (no results, location off…).
   final String? message;
+
+  /// Places matching what's typed in the search box so far.
+  final List<PlaceSuggestion> suggestions;
+  final bool suggesting;
 
   bool get canConfirm => target != null && !resolvingAddress;
 
@@ -52,6 +61,8 @@ final class LocationPickerState extends Equatable {
     bool? locating,
     LatLngPoint? moveTo,
     String? message,
+    List<PlaceSuggestion>? suggestions,
+    bool? suggesting,
   }) => LocationPickerState(
     target: target ?? this.target,
     address: clearAddress ? null : (address ?? this.address),
@@ -61,6 +72,8 @@ final class LocationPickerState extends Equatable {
     moveTo: moveTo ?? this.moveTo,
     moveSeq: moveTo == null ? moveSeq : moveSeq + 1,
     message: message,
+    suggestions: suggestions ?? this.suggestions,
+    suggesting: suggesting ?? this.suggesting,
   );
 
   @override
@@ -73,6 +86,8 @@ final class LocationPickerState extends Equatable {
     moveTo,
     moveSeq,
     message,
+    suggestions,
+    suggesting,
   ];
 }
 
@@ -80,11 +95,23 @@ final class LocationPickerState extends Equatable {
 /// address under the pin is looked up when the map stops moving.
 @injectable
 class LocationPickerCubit extends Cubit<LocationPickerState> {
-  LocationPickerCubit(this._location, this._geocoder)
+  LocationPickerCubit(this._location, this._geocoder, this._places)
     : super(const LocationPickerState());
 
   final LocationService _location;
   final GeocodingService _geocoder;
+  final PlaceSearchService _places;
+
+  /// Wait this long after the last keystroke before asking for suggestions.
+  static const suggestDelay = Duration(milliseconds: 350);
+
+  /// Suggestions start from this many characters.
+  static const minSuggestLength = 3;
+
+  Timer? _suggestTimer;
+
+  /// Only the newest suggestion request may update the list.
+  int _suggestSeq = 0;
 
   /// Only the newest lookup may update the address.
   int _lookup = 0;
@@ -126,9 +153,60 @@ class LocationPickerCubit extends Cubit<LocationPickerState> {
     emit(state.copyWith(address: address, resolvingAddress: false));
   }
 
+  /// The search text changed: refresh suggestions once typing pauses.
+  void queryChanged(String query) {
+    _suggestTimer?.cancel();
+    final q = query.trim();
+    if (q.length < minSuggestLength) {
+      _suggestSeq++;
+      if (state.suggestions.isNotEmpty || state.suggesting) {
+        emit(state.copyWith(suggestions: const [], suggesting: false));
+      }
+      return;
+    }
+    _suggestTimer = Timer(suggestDelay, () => _suggest(q));
+  }
+
+  Future<void> _suggest(String query) async {
+    final seq = ++_suggestSeq;
+    emit(state.copyWith(suggesting: true));
+    final found = await _places.suggest(query, near: state.target);
+    if (isClosed || seq != _suggestSeq) return;
+    emit(state.copyWith(suggestions: found, suggesting: false));
+  }
+
+  /// A suggestion was tapped: fly there; the pin's address is then looked up.
+  void suggestionChosen(PlaceSuggestion place) {
+    _cancelSuggestions();
+    emit(
+      state.copyWith(
+        suggestions: const [],
+        suggesting: false,
+        moveTo: place.point,
+      ),
+    );
+  }
+
+  void dismissSuggestions() {
+    _cancelSuggestions();
+    if (state.suggestions.isEmpty && !state.suggesting) return;
+    emit(state.copyWith(suggestions: const [], suggesting: false));
+  }
+
+  void _cancelSuggestions() {
+    _suggestTimer?.cancel();
+    _suggestSeq++;
+  }
+
+  /// Search pressed: take the top suggestion if there is one, otherwise ask
+  /// the phone's geocoder for the full text.
   Future<void> search(String query) async {
     if (query.trim().isEmpty || state.searching) return;
-    emit(state.copyWith(searching: true));
+    if (state.suggestions case [final top, ...]) {
+      return suggestionChosen(top);
+    }
+    _cancelSuggestions();
+    emit(state.copyWith(searching: true, suggesting: false));
     final found = await _geocoder.forwardGeocode(query);
     if (isClosed) return;
     emit(
@@ -140,6 +218,12 @@ class LocationPickerCubit extends Cubit<LocationPickerState> {
             )
           : state.copyWith(searching: false, moveTo: found),
     );
+  }
+
+  @override
+  Future<void> close() {
+    _suggestTimer?.cancel();
+    return super.close();
   }
 
   Future<void> useMyLocation() async {

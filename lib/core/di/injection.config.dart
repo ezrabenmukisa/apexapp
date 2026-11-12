@@ -12,6 +12,7 @@
 
 import 'package:app/core/device/connectivity_service.dart' as _i511;
 import 'package:app/core/device/device_services.dart' as _i62;
+import 'package:app/core/device/place_search.dart' as _i233;
 import 'package:app/core/device/real_device_services.dart' as _i346;
 import 'package:app/core/di/data_source_module.dart' as _i1066;
 import 'package:app/core/di/device_module.dart' as _i1013;
@@ -144,6 +145,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i62.SimulatedPermissionsService>(
       () => _i62.SimulatedPermissionsService(),
     );
+    gh.lazySingleton<_i233.SimulatedPlaceSearch>(
+      () => _i233.SimulatedPlaceSearch(),
+    );
     gh.lazySingleton<_i346.GeolocatorLocationService>(
       () => _i346.GeolocatorLocationService(),
     );
@@ -199,12 +203,6 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i19.PermissionsCubit(gh<_i62.PermissionsService>()),
     );
     gh.lazySingleton<_i346.MediaStore>(() => _i346.AppMediaStore());
-    gh.factory<_i60.LocationPickerCubit>(
-      () => _i60.LocationPickerCubit(
-        gh<_i62.LocationService>(),
-        gh<_i62.GeocodingService>(),
-      ),
-    );
     gh.lazySingleton<_i346.PickerCaptureService>(
       () => _i346.PickerCaptureService(
         gh<_i62.LocationService>(),
@@ -261,6 +259,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i818.SessionLocalDataSource>(),
       ),
     );
+    gh.lazySingleton<_i233.PhotonPlaceSearch>(
+      () => _i233.PhotonPlaceSearch(gh<_i361.Dio>()),
+    );
     gh.lazySingleton<_i522.DocumentCache>(
       () => _i522.DocumentCache(gh<_i361.Dio>()),
     );
@@ -303,6 +304,12 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i1065.UpdateProfile>(
       () => _i1065.UpdateProfile(gh<_i631.ProfileRepository>()),
+    );
+    gh.lazySingleton<_i233.PlaceSearchService>(
+      () => deviceModule.placeSearch(
+        gh<_i233.PhotonPlaceSearch>(),
+        gh<_i233.SimulatedPlaceSearch>(),
+      ),
     );
     gh.factory<_i876.CompleteProfileCubit>(
       () => _i876.CompleteProfileCubit(gh<_i1065.UpdateProfile>()),
@@ -357,6 +364,13 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i72.EstablishSession(gh<_i765.AuthRepository>()),
     );
     gh.factory<_i72.SignOut>(() => _i72.SignOut(gh<_i765.AuthRepository>()));
+    gh.factory<_i60.LocationPickerCubit>(
+      () => _i60.LocationPickerCubit(
+        gh<_i62.LocationService>(),
+        gh<_i62.GeocodingService>(),
+        gh<_i233.PlaceSearchService>(),
+      ),
+    );
     gh.lazySingleton<_i787.MilestonesDataSource>(
       () => dataSourceModule.milestones(
         gh<_i787.MilestonesDataSourceRemote>(),
