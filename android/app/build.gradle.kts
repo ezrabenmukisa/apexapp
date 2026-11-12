@@ -30,7 +30,9 @@ val dotEnv = Properties().apply {
 
 android {
     namespace = "com.apex.app"
-    compileSdk = flutter.compileSdkVersion
+    // permission_handler_android 14.1+ requires compiling against API 37,
+    // above Flutter's default.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

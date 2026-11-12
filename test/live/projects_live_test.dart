@@ -36,7 +36,8 @@ void main() {
 
   setUpAll(() async {
     if (tokensPath == null) return;
-    tokens = jsonDecode(File(tokensPath).readAsStringSync()) as Map<String, dynamic>;
+    tokens =
+        jsonDecode(File(tokensPath).readAsStringSync()) as Map<String, dynamic>;
     ownerDio = dioFor('owner');
     inviteeDio = dioFor('invitee');
     owner = ProjectsDataSourceRemote(ownerDio);
